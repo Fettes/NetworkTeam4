@@ -33,8 +33,9 @@ class EscapeRoomObject:
 
 
 class EscapeRoomCommandHandler:
-    def __init__(self, room, player, output=print):
+    def __init__(self, room, player, output=print):         #需要加两个room
         self.room = room
+        
         self.player = player
         self.output = output
 
@@ -214,6 +215,26 @@ Across from the door is a large {mirror}. Below the mirror is an old chest.
 
 The room is old and musty and the floor is creaky and warped.{interesting}""".format(**room_data)
 
+def create_room2_description(room):
+    room_data = {
+        "mirror": room["container"]["mirror"].name,
+        "clock_time": room["container"]["clock"]["time"],
+        "interesting": ""
+    }
+    for item in room["container"].values():
+        if item["interesting"]:
+            room_data["interesting"] += "\n\t" + short_description(item)
+    if room_data["interesting"]:
+        room_data["interesting"] = "\nIn the room you see:" + room_data["interesting"]
+    return """You are in a locked room. It seems like it is a different room. But still, there is only one door
+and it is locked. Above the door is a clock that reads {clock_time}.
+Across from the door is a large {mirror}. Beside the mirror is an old cage.
+There ia a beast in the old cage trying to break out and the cage has a lock seems to be destoried in a few seconds.
+You could also see an axe sticking on the celling above the cage.
+The key in your hand disappears. Perhaps you need to find another key and take a look at the beast.
+
+The room is old and musty and the floor is creaky and warped.{interesting}""".format(**room_data)
+
 
 def create_door_description(door):
     description = "The door is strong and highly secured."
@@ -296,6 +317,7 @@ class EscapeRoomGame:
         chest = EscapeRoomObject("chest", visible=True, openable=True, open=False, keyed=True, locked=True,
                                  unlockers=[hairpin])
         room = EscapeRoomObject("room", visible=True)
+        room2 = EscapeRoomObject("room2", visible=True)
         player = EscapeRoomObject("player", visible=False, alive=True)
         hammer = EscapeRoomObject("hammer", visible=True, gettable=True)
         flyingkey = EscapeRoomObject("flyingkey", visible=True, flying=True, hittable=False, smashers=[hammer],
@@ -304,7 +326,8 @@ class EscapeRoomGame:
         # setup containers
         player["container"] = {}
         chest["container"] = create_container_contents(hammer)
-        room["container"] = create_container_contents(player, door, clock, mirror, hairpin, chest, flyingkey)
+        room["container"] = create_container_contents(player, door, clock, mirror, hairpin, flyingkey, chest)
+        room2["container"] = create_container_contents(player, door, clock, mirror, cage, lock, beast, axe, gyroscope)
 
         # set initial descriptions (functions)
         door["description"] = create_door_description(door)
@@ -313,6 +336,9 @@ class EscapeRoomGame:
         flyingkey["description"] = create_flyingkey_description(flyingkey)
         flyingkey["short_description"] = create_flyingkey_short_description(flyingkey)
         key["description"] = "a golden key, cruelly broken from its wings."
+        axe["description"] = "a nice axe with the sign of god of thunder."
+        cage["description"] = "a very old charge, and it seems that it will be broken in a seconds"
+
 
         # the room's description depends on other objects. so do it last
         room["description"] = create_room_description(room)
