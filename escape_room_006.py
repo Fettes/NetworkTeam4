@@ -9,7 +9,7 @@ def create_container_contents(*escape_room_objects):
 
 
 def listFormat(object_list):
-    l = ["a " + object.name for object in object_list if object["visible"]]
+    l = ["a " + object.name for object in object_list if object["visible"]] #aaaaaaa
     return ", ".join(l)
 
 
