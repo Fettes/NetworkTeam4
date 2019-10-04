@@ -4,7 +4,8 @@ Escape Room Core
 import random, sys, asyncio
 from prompt import *
 
-
+#TEST1111111111111111111111111111111111111111111111111
+#TEST2222222222222222222222222222222222222222222222222
 def create_container_contents(*escape_room_objects):
     return {obj.name: obj for obj in escape_room_objects}
 
