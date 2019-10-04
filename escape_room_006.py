@@ -3,6 +3,16 @@ Escape Room Core
 """
 import random, sys, asyncio
 from prompt import *
+import pygame
+
+file="playmusic.mp3"
+#file="testmusic.mp3"
+pygame.mixer.init()
+track = pygame.mixer.music.load(file)
+pygame.mixer.music.play()
+# pygame.mixer.init()
+# track = pygame.mixer.music.load(file)
+# pygame.mixer.music.play()
 
 
 def create_container_contents(*escape_room_objects):
@@ -572,6 +582,7 @@ async def gameswitch(switch):
     if switch == 1:
         game.create_game(roomswitch=switch)
         game.start()
+        pygame.mixer.music.play()
         flush_output(">> ", end='')
         loop.add_reader(sys.stdin, game_next_input, game)
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
