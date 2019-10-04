@@ -29,9 +29,6 @@ if __name__ == "__main__":
     # Each client connection will create a new protocol instance
     coro = playground.connect.raw_vnic_connection(lambda: Protocol_factory(loop), vnicName="default")
     server = loop.run_until_complete(coro)
-
-    # Serve requests until Ctrl+C is pressed
-    print('Serving on {}'.format(server.sockets[0].getsockname()))
     try:
         loop.run_forever()
     except KeyboardInterrupt:
