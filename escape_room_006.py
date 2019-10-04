@@ -9,8 +9,7 @@ def create_container_contents(*escape_room_objects):
 
 
 def listFormat(object_list):
-    l = ["a " + object.name for object in object_list if object["visible"]] #aaaaaaa
-    return ", ".join(l)
+    l = ["a " + object.name for object in object_list if object["visible"]]
 
 
 class EscapeRoomObject:
@@ -33,7 +32,7 @@ class EscapeRoomObject:
 
 
 class EscapeRoomCommandHandler:
-    def __init__(self, room, player, output=print):         #需要加两个room
+    def __init__(self, room, player, output=print):  # 需要加两个room
         self.room = room
         self.player = player
         self.output = output
@@ -215,6 +214,7 @@ Across from the door is a large {mirror}. Below the mirror is an old chest.
 
 The room is old and musty and the floor is creaky and warped.{interesting}""".format(**room_data)
 
+
 def create_door_description(door):
     description = "The door is strong and highly secured."
     if door["locked"]: description += " The door is locked."
@@ -276,7 +276,8 @@ def short_description(object):
     if not object["short_description"]: return "a " + object.name
     return object["short_description"]
 
-#--------------------------------------------------------------tsts
+
+# --------------------------------------------------------------tsts
 def create_room2_description(room):
     room_data = {
         "mirror": room["container"]["mirror"].name,
@@ -289,13 +290,14 @@ def create_room2_description(room):
     if room_data["interesting"]:
         room_data["interesting"] = "\nIn the room you see:" + room_data["interesting"]
     return """You are in a locked room. It seems like it is a different room. But still, there is only one door
-                and it is locked. Above the door is a clock that reads {clock_time}.
-                Across from the door is a large {mirror}. Beside the mirror is an old cage.
-                There ia a beast in the old cage trying to break out and the cage has a lock seems to be destoried in a few seconds.
-                You could also see an axe sticking on the celling above the cage.
-                The key and hammer in your hand disappear but you still have hairpin. Perhaps you need to find another key and take a look at the beast.
+            and it is locked. Above the door is a clock that reads {clock_time}.
+            Across from the door is a large {mirror}. Beside the mirror is an old cage.
+            There ia a beast in the old cage trying to break out and the cage has a lock seems to be destroyed in a few seconds.
+            You could also see an axe sticking on the celling above the cage.
+            The key and hammer in your hand disappear but you still have hairpin. Perhaps you need to find another key and take a look at the beast.
 
-                The room is old and musty and the floor is creaky and warped.{interesting}""".format(**room_data)
+            The room is old and musty and the floor is creaky and warped.{interesting}""".format(**room_data)
+
 
 def create_cage_description(cage):
     description = "An old cage. It looks worn, and it's not sturdy."
@@ -305,32 +307,36 @@ def create_cage_description(cage):
         description += " The beast run out and nothing in the cage"
     return description
 
+
 def create_beast_description(beast):
     description = """It is a bloody and giant beast, and it really wants to eat you as its dinner.
                         In its hand, you can see a shinning key. How can you get the key?"""
-    if beast["locked"] == True:
+    if beast["locked"]:
         description += " It is in the cage."
-    if beast["locked"] == False:
+    if not beast["locked"]:
         description += "It is approaching. Try too kill it or it will eat you!!!!!!"
     return description
 
+
 def create_lock_description(lock):
     description = "It is a lock, and seems that you can hit it. It can be easily destroyed."
-    if lock["broken"] == False:
+    if not lock["broken"]:
         description += "It will be destroyed soon by the beast."
-    if lock["broken"] == True:
+    if lock["broken"]:
         description += "It is broken."
     return description
+
 
 def create_axe_description(axe):
     description = "A nice axe with the sign of god of thunder."
     return description
 
+
 def create_gyroscope_description(gyroscope):
     description = "This gyroscope is wired because it is spin forever."
-    if gyroscope["hitted"] == False:
+    if not gyroscope["hitted"]:
         description += "Try to hit it?"
-    if gyroscope["hitted"] == True:
+    if gyroscope["hitted"]:
         description += "It is still spinning. Nothing happens"
     return description
 
@@ -344,7 +350,7 @@ class EscapeRoomGame:
         self.agents = []
         self.status = "void"
 
-    def create_game(self, roomswitch = 1,cheat=False):
+    def create_game(self, roomswitch=1, cheat=False):
         clock = EscapeRoomObject("clock", visible=True, time=100)
         mirror = EscapeRoomObject("mirror", visible=True)
         hairpin = EscapeRoomObject("hairpin", visible=False, gettable=True)
@@ -359,24 +365,27 @@ class EscapeRoomGame:
         flyingkey = EscapeRoomObject("flyingkey", visible=True, flying=True, hittable=False, smashers=[hammer],
                                      interesting=True, location="ceiling")
 
-        #--------------------------------------------------------------------tsts
+        # --------------------------------------------------------------------tsts
         player2 = EscapeRoomObject("player2", visible=False, alive=True)
         room2 = EscapeRoomObject("room2", visible=True)
-        axe = EscapeRoomObject("axe", visible=True, gettable = True)
-        cage = EscapeRoomObject("cage", visible = True, gettable = False, locked = True, open=False)
-        lock = EscapeRoomObject("lock", visible = True, gettable = False, hittable = True, smashers = [axe], broken = False, locked = True)
-        beast = EscapeRoomObject("beast", visible = True, gettable = False, hittable = False, locked = True, smashers = [axe])
-        gyroscope = EscapeRoomObject("gyroscope", visible = True, gettable = False, hittable = True, smashers = [axe], hitted = False)
+        axe = EscapeRoomObject("axe", visible=True, gettable=True)
+        cage = EscapeRoomObject("cage", visible=True, gettable=False, locked=True, open=False)
+        lock = EscapeRoomObject("lock", visible=True, gettable=False, hittable=True, smashers=[axe], broken=False,
+                                locked=True)
+        beast = EscapeRoomObject("beast", visible=True, gettable=False, hittable=False, locked=True, smashers=[axe])
+        gyroscope = EscapeRoomObject("gyroscope", visible=True, gettable=False, hittable=True, smashers=[axe],
+                                     hitted=False)
 
         # setup containers
         player["container"] = {}
         chest["container"] = create_container_contents(hammer)
         room["container"] = create_container_contents(player, door, clock, mirror, hairpin, flyingkey, chest)
-        room2["container"] = create_container_contents(player2, door, clock, mirror, cage, lock, beast, axe, gyroscope, hairpin)
+        room2["container"] = create_container_contents(player2, door, clock, mirror, cage, lock, beast, axe, gyroscope,
+                                                       hairpin)
         beast["container"] = create_container_contents(key)
 
         # set initial descriptions (functions)
-        player2["container"] = {"hairpin":hairpin}
+        player2["container"] = {"hairpin": hairpin}
         door["description"] = create_door_description(door)
         mirror["description"] = create_mirror_description(mirror, room)
         chest["description"] = create_chest_description(chest)
@@ -384,13 +393,12 @@ class EscapeRoomGame:
         flyingkey["short_description"] = create_flyingkey_short_description(flyingkey)
         key["description"] = "a golden key, cruelly broken from its wings."
 
-        #--------------------------------------------------------tsts
+        # --------------------------------------------------------tsts
         axe["description"] = create_axe_description(axe)
         cage["description"] = create_cage_description(cage)
         gyroscope["description"] = create_gyroscope_description(gyroscope)
         beast["description"] = create_beast_description(beast)
         lock["description"] = create_lock_description(lock)
-
 
         # the room's description depends on other objects. so do it last
         room["description"] = create_room_description(room)
@@ -409,7 +417,7 @@ class EscapeRoomGame:
             "smashers"]) and flyingkey_hit_trigger(room, flyingkey, key, self.output)))
         # TODO, the chest needs some triggers. This is for a later exercise
 
-        #--------------------------------------tsts
+        # --------------------------------------tsts
         beast.triggers.append(lambda obj, cmd, *args: (cmd == "smashcage") and beast.__setitem__("locked", False))
 
         if roomswitch == 1:
@@ -440,9 +448,9 @@ class EscapeRoomGame:
                 self.output(event)
             await asyncio.sleep(5)
 
-    #-----------------------------------------tsts
+    # -----------------------------------------tsts
     async def beast_agent(self, beast):
-        
+
         await asyncio.sleep(5)  # sleep before starting the while loop
         flag = 20
         while self.status == "playing" and beast["locked"]:
@@ -451,21 +459,17 @@ class EscapeRoomGame:
             if flag == 0:
                 beast.do_trigger("smashcage")
                 self.output("The beast breaks out, you are under attack!!!")
-                print(self.player["container"])#
+                print(self.player["container"])  #
                 object = self.player["container"].get("axe", None)
                 if object:
                     self.output("You are defending the beast with axe, try to hit it.")
                 else:
                     self.output("You do not have weapon. You become its dinner.")
                     self.status = "dead"
-                    #await asyncio.wait(gameswitch(switch=1))
-                    asyncio.ensure_future(gameswitch(switch = 1))
-
-
-
+                    # await asyncio.wait(gameswitch(switch=1))
+                    asyncio.ensure_future(gameswitch(switch=1))
 
             await asyncio.sleep(5)
-
 
     def start(self):
         self.status = "playing"
@@ -508,18 +512,19 @@ async def gameswitch(switch):
     loop = asyncio.get_event_loop()
     game = EscapeRoomGame(output=flush_output)
     if switch == 1:
-        game.create_game(roomswitch = switch)
+        game.create_game(roomswitch=switch)
         game.start()
         flush_output(">> ", end='')
         loop.add_reader(sys.stdin, game_next_input, game)
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
     if switch == 2:
-        game.create_game(roomswitch = switch)
+        game.create_game(roomswitch=switch)
         game.start()
         flush_output(">> ", end='')
         loop.add_reader(sys.stdin, game_next_input, game)
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
 
+
 if __name__ == "__main__":
-    asyncio.ensure_future(gameswitch(switch = 2))
+    asyncio.ensure_future(gameswitch(switch=2))
     asyncio.get_event_loop().run_forever()
