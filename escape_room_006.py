@@ -401,12 +401,37 @@ def create_axe_description(axe):
 
 
 def create_gyroscope_description(gyroscope):
-    description = "This gyroscope is wired because it is spin forever."
+    description = "This gyroscope is wired because it spins forever."
     if not gyroscope["hitted"]:
         description += "Try to hit it?"
     if gyroscope["hitted"]:
         description += "It is still spinning. Nothing happens"
     return description
+
+
+#---------------------------------------------------------------------------------------------haolin
+def create_gun_description(gun):
+    description = "A shotgun, you can use it to kill anyone, or, yourself."
+    return description
+
+def create_saw_description(saw):
+    description = "A saw. People sometimes use it to do something cruel."
+    return description
+
+def create_bullet_description(bullet):
+    description= "You see a bullet inside the magazine. Only one. So make up your mind before using it."
+    return description
+
+def create_steelchain_description(steelchain):
+    description = "A steelchain is on your leg and you are chained up."
+    if steelchain["broken"]:
+        description="A broken steelchain. You just broke it."
+    return description
+
+def create_room3_description(room3):
+    return """You are in a dark room. There is no mirror or clock. You are lucky since the door is unlocked but you can't move around because you are chained up with a steelchain. 
+    You see a gun and a saw in front of you. You might have seen that movie and you'd better know what I'm talking about. If you dont, you have
+    to figure it out yourself. Good luck. """
 
 
 class EscapeRoomGame:
@@ -442,12 +467,27 @@ class EscapeRoomGame:
         beast = EscapeRoomObject("beast", visible=True, gettable=False, hittable=False, locked=True, smashers=[axe], standable = False, alive = True)
         gyroscope = EscapeRoomObject("gyroscope", visible=True, gettable=False, hittable=True, smashers=[axe], hitted=False, standable = False)
 
+        #---------------------------------------------------------------------------haolin
+        room3 = EscapeRoomObject("room3", visible=True)
+        gun=EscapeRoomObject("gun",visible=True,gettable=True,hittable=False,locked=False,standable=False)
+        bullet=EscapeRoomObject("bullet",visible=False,gettable=False,hittable=False,locked=False,standable=False)
+        saw=EscapeRoomObject("saw",visible=True,gettable=True,hittable=False,locked=False,standable=False)
+        steelchain=EscapeRoomObject("steelchain",visible=True,gettable=False,hittable=True, smashers=[saw], broken=False)
+        player3 = EscapeRoomObject("player3", visible=True, alive=True, hittable=True, smashers=[gun],bleeding=False)
+
+
+
+
         # setup containers
         player["container"] = {}
         chest["container"] = create_container_contents(hammer)
         room["container"] = create_container_contents(player, door, clock, mirror, hairpin, flyingkey, chest)
         room2["container"] = create_container_contents(player2, door, clock, mirror, cage, lock, beast, axe, gyroscope,hairpin)
+        room3["container"] = create_container_contents(player3,door,gun,saw,steelchain,gyroscope)
         beast["container"] = create_container_contents(key)
+
+        #-------------------------------------------------------------haolin
+        gun["container"] = create_container_contents(bullet)
 
         # set initial descriptions (functions)
         player2["container"] = {"hairpin": hairpin}
@@ -465,9 +505,19 @@ class EscapeRoomGame:
         beast["description"] = create_beast_description(beast)
         lock["description"] = create_lock_description(lock)
 
+        #------------------------------------------------------------haolin
+        player3["container"]={}
+        gun["description"] = create_gun_description(gun)
+        saw["description"] = create_saw_description(saw)
+        steelchain["description"] = create_steelchain_description(steelchain)
+        bullet["description"] = create_bullet_description(bullet)
+
+
         # the room's description depends on other objects. so do it last
         room["description"] = create_room_description(room)
         room2["description"] = create_room2_description(room2)
+        room3["description"] = create_room3_description(room3)
+
 
         mirror.triggers.append(lambda obj, cmd, *args: (cmd == "look") and hairpin.__setitem__("visible", True))
         mirror.triggers.append(lambda obj, cmd, *args: (cmd == "look") and mirror.__setitem__("description",
@@ -495,6 +545,10 @@ class EscapeRoomGame:
             self.room, self.player = room2, player2
             self.command_handler = self.command_handler_class(room2, player2, self.output)
             self.agents.append(self.beast_agent(beast, lock))
+        if roomswitch == 3:
+            self.room,self.player =room3,player3
+            self.command_handler = self.command_handler_class(room3, player3, self.output)
+            #self.agents.append(self.flyingkey_agent(flyingkey))
         self.status = "created"
 
     async def flyingkey_agent(self, flyingkey):
@@ -592,9 +646,16 @@ async def gameswitch(switch):
         flush_output(">> ", end='')
         loop.add_reader(sys.stdin, game_next_input, game)
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
+    if switch == 3:
+        game.create_game(roomswitch=switch)
+        game.start()
+        flush_output(">> ", end='')
+        loop.add_reader(sys.stdin, game_next_input, game)
+        #await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
+
 
 
 if __name__ == "__main__":
-    run_start()
-    asyncio.ensure_future(gameswitch(switch=2))
+    #run_start()
+    asyncio.ensure_future(gameswitch(switch=3))
     asyncio.get_event_loop().run_forever()
