@@ -14,7 +14,8 @@ pygame.mixer.music.play()
 # track = pygame.mixer.music.load(file)
 # pygame.mixer.music.play()
 
-
+#TEST1111111111111111111111111111111111111111111111111
+#TEST2222222222222222222222222222222222222222222222222
 def create_container_contents(*escape_room_objects):
     return {obj.name: obj for obj in escape_room_objects}
 
@@ -185,10 +186,9 @@ class EscapeRoomCommandHandler:
             elif target_name == "lock":
                 self._run_triggers(target, "hitlock", with_what)
             elif target_name == "player2":
-                print(self.player)     
                 self._run_triggers(target, "hitmyself", with_what)
-                
-
+            elif target_name == "gyroscope":
+                self._run_triggers(target, "hitgyroscope", with_what)
 
     def _cmd_inventory(self, inventory_args):
         """
@@ -440,7 +440,7 @@ class EscapeRoomGame:
         player2 = EscapeRoomObject("player2", visible=True, alive=True, hittable = True, smashers=[axe])
         lock = EscapeRoomObject("lock", visible=True, gettable=False, hittable=True, smashers=[axe], locked=True, standable = False)
         beast = EscapeRoomObject("beast", visible=True, gettable=False, hittable=False, locked=True, smashers=[axe], standable = False, alive = True)
-        gyroscope = EscapeRoomObject("gyroscope", visible=True, gettable=False, hittable=True, smashers=[axe],hitted=False, standable = False)
+        gyroscope = EscapeRoomObject("gyroscope", visible=True, gettable=False, hittable=True, smashers=[axe], hitted=False, standable = False)
 
         # setup containers
         player["container"] = {}
