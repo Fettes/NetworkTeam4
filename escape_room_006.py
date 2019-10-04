@@ -469,15 +469,12 @@ class EscapeRoomGame:
         room.triggers.append(lambda obj, cmd, *args: (cmd == "_post_command_") and advance_time(room, clock))
         flyingkey.triggers.append((lambda obj, cmd, *args: (cmd == "hit" and args[0] in obj["smashers"]) and flyingkey_hit_trigger(room, flyingkey, key, self.output)))
         # TODO, the chest needs some triggers. This is for a later exercise
-
-
         # --------------------------------------tsts
         beast.triggers.append(lambda obj, cmd, *args: (cmd == "smashcage") and beast.__setitem__("locked", False))
         lock.triggers.append(lambda obj, cmd, *args: (cmd == "smashlock") and lock.__setitem__("locked", False))
         lock.triggers.append((lambda obj, cmd, *args: (cmd == "hitlock" and args[0] in obj["smashers"]) and lock_hit_trigger(lock, beast, self.output)))
         beast.triggers.append((lambda obj, cmd, *args: (cmd == "hitbeast" and args[0] in obj["smashers"]) and beast_hit_trigger(beast, key, self.output)))
         player2.triggers.append((lambda obj, cmd, *args: (cmd == "hitmyself" and args[0] in obj["smashers"]) and player_hit_trigger(player2, self.output)))
-        #axe.triggers.append(lambda obj, cmd, *args: (cmd == "stand") and axe.__setitem__("gettable", True))
 
         if roomswitch == 1:
             self.room, self.player = room, player
