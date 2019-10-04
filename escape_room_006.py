@@ -147,6 +147,8 @@ class EscapeRoomCommandHandler:
         if not hit_args:
             return self.output("What do you want to hit?")
         target_name = hit_args[0]
+        if target_name == "myself":
+            target_name = "player2"
         with_what_name = None
         if len(hit_args) != 1:
             with_what_name = hit_args[-1]
@@ -159,13 +161,23 @@ class EscapeRoomCommandHandler:
             if not with_what:
                 return self.output("You don't have a {}".format(with_what_name))
         else:
-            with_what = None
+            return self.output("With what?")
 
         if not target["hittable"]:
             return self.output("You can't hit that!")
         else:
-            self.output("You hit the {} with the {}".format(target_name, with_what_name))
-            self._run_triggers(target, "hit", with_what)
+            self.output("You hit the {} with the {}".format(target_name, with_what_name))           
+            if target_name == "flyingkey":
+                self._run_triggers(target, "hit", with_what)
+            elif target_name == "beast":
+                self._run_triggers(target, "hitbeast", with_what)
+            elif target_name == "lock":
+                self._run_triggers(target, "hitlock", with_what)
+            elif target_name == "player2":
+                print(self.player)     
+                self._run_triggers(target, "hitmyself", with_what)
+                
+
 
     def _cmd_inventory(self, inventory_args):
         """
@@ -190,9 +202,13 @@ class EscapeRoomCommandHandler:
         if not target or not target["standable"]:
             return self.output("You cannot stand on {}.".format(target_name))
         else:
-            self.output("you stand on {}, then you can get the axe!!".format(target_name))
-            object = self.room["container"].get("axe", None)
-            object["gettable"] = True
+            object1 = self.player["container"].get("axe", None)
+            if not object1:
+                self.output("you stand on {}, then you can get the axe!!".format(target_name))
+                object = self.room["container"].get("axe", None)
+                object["gettable"] = True
+            else:
+                self.output("You stand on {}. Nothing you can do. So you jump down.".format(target_name))
 
     def command(self, command_string):
         # no command
@@ -286,6 +302,29 @@ def flyingkey_hit_trigger(room, flyingkey, key, output):
             "The flying key falls off the wall. When it hits the ground, it's wings break off and you now see an ordinary key.")
 
 
+#-------------------------------------------tsts
+def beast_hit_trigger(beast, output, key):
+    if beast["alive"] == True:
+        output("You quickly it!")
+    else:
+        beast["alive"] = False
+        key["gettable"] = True
+        output("You kill the beast and you find a shinning key in its hand. ")
+
+def lock_hit_trigger(lock, beast, output):
+    lock["locked"] = False
+    output("The lock destroyed and the cage open. The beast comes out!!!")
+    beast["locked"] = False
+    output("You are defending the beast with axe, try to hit it.")
+
+def player_hit_trigger(player, output):
+    #player["alive"] = False
+    output("You dead!")
+    output("However, you find yourself awake suddenly. Seems like you come back to the first room!!")
+    asyncio.ensure_future(gameswitch(switch=1))
+
+
+
 def short_description(object):
     if not object["short_description"]: return "a " + object.name
     return object["short_description"]
@@ -327,22 +366,26 @@ def create_beast_description(beast):
                         In its hand, you can see a shinning key. How can you get the key?"""
     if beast["locked"]:
         description += " It is in the cage."
-    if not beast["locked"]:
+    if not beast["locked"] and beast["alive"]:
         description += "It is approaching. Try too kill it or it will eat you!!!!!!"
+    if not beast["alive"]:
+        description += "Beast is dead."
     return description
 
 
 def create_lock_description(lock):
     description = "It is a lock, and seems that you can hit it. It can be easily destroyed."
-    if not lock["broken"]:
+    if lock["locked"]:
         description += "It will be destroyed soon by the beast."
-    if lock["broken"]:
+    if not lock["locked"]:
         description += "It is broken."
     return description
 
 
 def create_axe_description(axe):
     description = "A nice axe with the sign of god of thunder."
+    if not axe["gettable"]:
+        description += "It is too high. Try to stand on something!"
     return description
 
 
@@ -380,22 +423,19 @@ class EscapeRoomGame:
                                      interesting=True, location="ceiling")
 
         # --------------------------------------------------------------------tsts
-        player2 = EscapeRoomObject("player2", visible=False, alive=True)
         room2 = EscapeRoomObject("room2", visible=True)
         axe = EscapeRoomObject("axe", visible=True, gettable=False, standable = False)
         cage = EscapeRoomObject("cage", visible=True, gettable=False, locked=True, open=False,standable = True)
-        lock = EscapeRoomObject("lock", visible=True, gettable=False, hittable=True, smashers=[axe], broken=False,
-                                locked=True, standable = False)
-        beast = EscapeRoomObject("beast", visible=True, gettable=False, hittable=False, locked=True, smashers=[axe], standable = False)
-        gyroscope = EscapeRoomObject("gyroscope", visible=True, gettable=False, hittable=True, smashers=[axe],
-                                     hitted=False, standable = False)
+        player2 = EscapeRoomObject("player2", visible=True, alive=True, hittable = True, smashers=[axe])
+        lock = EscapeRoomObject("lock", visible=True, gettable=False, hittable=True, smashers=[axe], locked=True, standable = False)
+        beast = EscapeRoomObject("beast", visible=True, gettable=False, hittable=False, locked=True, smashers=[axe], standable = False, alive = True)
+        gyroscope = EscapeRoomObject("gyroscope", visible=True, gettable=False, hittable=True, smashers=[axe],hitted=False, standable = False)
 
         # setup containers
         player["container"] = {}
         chest["container"] = create_container_contents(hammer)
         room["container"] = create_container_contents(player, door, clock, mirror, hairpin, flyingkey, chest)
-        room2["container"] = create_container_contents(player2, door, clock, mirror, cage, lock, beast, axe, gyroscope,
-                                                       hairpin)
+        room2["container"] = create_container_contents(player2, door, clock, mirror, cage, lock, beast, axe, gyroscope,hairpin)
         beast["container"] = create_container_contents(key)
 
         # set initial descriptions (functions)
@@ -427,12 +467,16 @@ class EscapeRoomGame:
                                                                                                 door)))
         door.triggers.append(lambda obj, cmd, *args: (cmd == "open") and room["container"].__delitem__(player.name))
         room.triggers.append(lambda obj, cmd, *args: (cmd == "_post_command_") and advance_time(room, clock))
-        flyingkey.triggers.append((lambda obj, cmd, *args: (cmd == "hit" and args[0] in obj[
-            "smashers"]) and flyingkey_hit_trigger(room, flyingkey, key, self.output)))
+        flyingkey.triggers.append((lambda obj, cmd, *args: (cmd == "hit" and args[0] in obj["smashers"]) and flyingkey_hit_trigger(room, flyingkey, key, self.output)))
         # TODO, the chest needs some triggers. This is for a later exercise
+
 
         # --------------------------------------tsts
         beast.triggers.append(lambda obj, cmd, *args: (cmd == "smashcage") and beast.__setitem__("locked", False))
+        lock.triggers.append(lambda obj, cmd, *args: (cmd == "smashlock") and lock.__setitem__("locked", False))
+        lock.triggers.append((lambda obj, cmd, *args: (cmd == "hitlock" and args[0] in obj["smashers"]) and lock_hit_trigger(lock, beast, self.output)))
+        beast.triggers.append((lambda obj, cmd, *args: (cmd == "hitbeast" and args[0] in obj["smashers"]) and beast_hit_trigger(beast, key, self.output)))
+        player2.triggers.append((lambda obj, cmd, *args: (cmd == "hitmyself" and args[0] in obj["smashers"]) and player_hit_trigger(player2, self.output)))
         #axe.triggers.append(lambda obj, cmd, *args: (cmd == "stand") and axe.__setitem__("gettable", True))
 
         if roomswitch == 1:
@@ -442,7 +486,7 @@ class EscapeRoomGame:
         if roomswitch == 2:
             self.room, self.player = room2, player2
             self.command_handler = self.command_handler_class(room2, player2, self.output)
-            self.agents.append(self.beast_agent(beast))
+            self.agents.append(self.beast_agent(beast, lock))
         self.status = "created"
 
     async def flyingkey_agent(self, flyingkey):
@@ -464,23 +508,25 @@ class EscapeRoomGame:
             await asyncio.sleep(5)
 
     # -----------------------------------------tsts
-    async def beast_agent(self, beast):
+    async def beast_agent(self, beast, lock):
 
         await asyncio.sleep(8)  # sleep before starting the while loop
-        flag = 100
+        flag = 10
         while self.status == "playing" and beast["locked"]:
             self.output("The beast is destroying the lock which seems to break out soon. {} seconds left".format(flag))
             flag = flag - 5
             if flag == 0:
                 beast.do_trigger("smashcage")
+                lock.do_trigger("smashlock")
                 self.output("The beast breaks out, you are under attack!!!") 
                 object = self.player["container"].get("axe", None)
                 if object:
                     self.output("You are defending the beast with axe, try to hit it.")
                 else:
                     self.output("You do not have weapon. You become its dinner.")
+                    await asyncio.sleep(3)
+                    self.output("However, you find yourself awake suddenly. Seems like you come back to the first room!!")
                     self.status = "dead"
-                    # await asyncio.wait(gameswitch(switch=1))
                     asyncio.ensure_future(gameswitch(switch=1))
 
             await asyncio.sleep(5)
