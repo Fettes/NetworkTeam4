@@ -46,7 +46,6 @@ class EscapeRoomCommandHandler:
         if len(look_args) == 0:
             object = self.room
         else:
-            print(self.room["container"])
             object = self.room["container"].get(look_args[-1], self.player["container"].get(look_args[-1], None))
 
         if not object or not object["visible"]:
@@ -180,6 +179,21 @@ class EscapeRoomCommandHandler:
         self._run_triggers(object, "inventory")
         self.output("You are carrying {}".format(items))
 
+    #--------------------------------------------------tsts
+
+    def _cmd_stand(self, stand_args):
+        if not stand_args:
+            return self.output("Stand on what?")
+        target_name = stand_args[-1]
+
+        target = self.room["container"].get(target_name, None)
+        if not target or not target["standable"]:
+            return self.output("You cannot stand on {}.".format(target_name))
+        else:
+            self.output("you stand on {}, then you can get the axe!!".format(target_name))
+            object = self.room["container"].get("axe", None)
+            object["gettable"] = True
+
     def command(self, command_string):
         # no command
         if command_string.strip == "":
@@ -302,7 +316,7 @@ def create_room2_description(room):
 def create_cage_description(cage):
     description = "An old cage. It looks worn, and it's not sturdy."
     if cage["locked"]:
-        description += " And it appears to be locked. You can see a beast in it and it will destory the cage soon"
+        description += " And it appears to be locked. You can see a beast in it and it will destory the cage soon. Will you try to stand on it?"
     elif cage["open"]:
         description += " The beast run out and nothing in the cage"
     return description
@@ -352,13 +366,13 @@ class EscapeRoomGame:
 
     def create_game(self, roomswitch=1, cheat=False):
         clock = EscapeRoomObject("clock", visible=True, time=100)
-        mirror = EscapeRoomObject("mirror", visible=True)
-        hairpin = EscapeRoomObject("hairpin", visible=False, gettable=True)
-        key = EscapeRoomObject("key", visible=True, gettable=True, interesting=True)
+        mirror = EscapeRoomObject("mirror", visible=True, standable = False)
+        hairpin = EscapeRoomObject("hairpin", visible=False, gettable=True, standable = False)
+        key = EscapeRoomObject("key", visible=True, gettable=True, interesting=True, standable = False)
         door = EscapeRoomObject("door", visible=True, openable=True, open=False, keyed=True, locked=True,
-                                unlockers=[key])
+                                unlockers=[key], standable = False)
         chest = EscapeRoomObject("chest", visible=True, openable=True, open=False, keyed=True, locked=True,
-                                 unlockers=[hairpin])
+                                 unlockers=[hairpin], standable = False)
         room = EscapeRoomObject("room", visible=True)
         player = EscapeRoomObject("player", visible=False, alive=True)
         hammer = EscapeRoomObject("hammer", visible=True, gettable=True)
@@ -368,13 +382,13 @@ class EscapeRoomGame:
         # --------------------------------------------------------------------tsts
         player2 = EscapeRoomObject("player2", visible=False, alive=True)
         room2 = EscapeRoomObject("room2", visible=True)
-        axe = EscapeRoomObject("axe", visible=True, gettable=True)
-        cage = EscapeRoomObject("cage", visible=True, gettable=False, locked=True, open=False)
+        axe = EscapeRoomObject("axe", visible=True, gettable=False, standable = False)
+        cage = EscapeRoomObject("cage", visible=True, gettable=False, locked=True, open=False,standable = True)
         lock = EscapeRoomObject("lock", visible=True, gettable=False, hittable=True, smashers=[axe], broken=False,
-                                locked=True)
-        beast = EscapeRoomObject("beast", visible=True, gettable=False, hittable=False, locked=True, smashers=[axe])
+                                locked=True, standable = False)
+        beast = EscapeRoomObject("beast", visible=True, gettable=False, hittable=False, locked=True, smashers=[axe], standable = False)
         gyroscope = EscapeRoomObject("gyroscope", visible=True, gettable=False, hittable=True, smashers=[axe],
-                                     hitted=False)
+                                     hitted=False, standable = False)
 
         # setup containers
         player["container"] = {}
@@ -419,6 +433,7 @@ class EscapeRoomGame:
 
         # --------------------------------------tsts
         beast.triggers.append(lambda obj, cmd, *args: (cmd == "smashcage") and beast.__setitem__("locked", False))
+        #axe.triggers.append(lambda obj, cmd, *args: (cmd == "stand") and axe.__setitem__("gettable", True))
 
         if roomswitch == 1:
             self.room, self.player = room, player
@@ -451,15 +466,14 @@ class EscapeRoomGame:
     # -----------------------------------------tsts
     async def beast_agent(self, beast):
 
-        await asyncio.sleep(5)  # sleep before starting the while loop
-        flag = 20
+        await asyncio.sleep(8)  # sleep before starting the while loop
+        flag = 100
         while self.status == "playing" and beast["locked"]:
             self.output("The beast is destroying the lock which seems to break out soon. {} seconds left".format(flag))
-            flag = flag - 10
+            flag = flag - 5
             if flag == 0:
                 beast.do_trigger("smashcage")
-                self.output("The beast breaks out, you are under attack!!!")
-                print(self.player["container"])  #
+                self.output("The beast breaks out, you are under attack!!!") 
                 object = self.player["container"].get("axe", None)
                 if object:
                     self.output("You are defending the beast with axe, try to hit it.")
