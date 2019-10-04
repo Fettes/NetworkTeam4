@@ -2,6 +2,7 @@
 Escape Room Core
 """
 import random, sys, asyncio
+from prompt import *
 
 
 def create_container_contents(*escape_room_objects):
@@ -583,5 +584,6 @@ async def gameswitch(switch):
 
 
 if __name__ == "__main__":
+    run_start()
     asyncio.ensure_future(gameswitch(switch=2))
     asyncio.get_event_loop().run_forever()
