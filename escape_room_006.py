@@ -6,16 +6,10 @@ from prompt import *
 import pygame
 
 file="playmusic.mp3"
-#file="testmusic.mp3"
 pygame.mixer.init()
 track = pygame.mixer.music.load(file)
 pygame.mixer.music.play()
-# pygame.mixer.init()
-# track = pygame.mixer.music.load(file)
-# pygame.mixer.music.play()
 
-#TEST1111111111111111111111111111111111111111111111111
-#TEST2222222222222222222222222222222222222222222222222
 def create_container_contents(*escape_room_objects):
     return {obj.name: obj for obj in escape_room_objects}
 
@@ -189,6 +183,8 @@ class EscapeRoomCommandHandler:
                 self._run_triggers(target, "hitmyself", with_what)
             elif target_name == "gyroscope":
                 self._run_triggers(target, "hitgyroscope", with_what)
+            elif target_name == "steelchain":
+                self._run_triggers(target, "hitsteelchain", with_what) 
 
     def _cmd_inventory(self, inventory_args):
         """
@@ -314,7 +310,7 @@ def flyingkey_hit_trigger(room, flyingkey, key, output):
 
 
 #-------------------------------------------tsts
-def beast_hit_trigger(beast, output, key):
+def beast_hit_trigger(beast, key, output):
     if beast["alive"] == True:
         output("You quickly it!")
     else:
@@ -334,6 +330,13 @@ def player_hit_trigger(player, output):
     output("However, you find yourself awake suddenly. Seems like you come back to the first room!!")
     asyncio.ensure_future(gameswitch(switch=1))
 
+
+#-----------------------------------------haolin
+def steelchain_hit_trigger(player, steelchain, output):
+    player["bleeding"] = True
+    steelchain["broken"] = True
+    output("Although you break the steelchain successfully. However, you hurt your legs accidentally!")
+    asyncio.ensure_future(blood_agent(player))
 
 
 def short_description(object):
@@ -537,6 +540,9 @@ class EscapeRoomGame:
         beast.triggers.append((lambda obj, cmd, *args: (cmd == "hitbeast" and args[0] in obj["smashers"]) and beast_hit_trigger(beast, key, self.output)))
         player2.triggers.append((lambda obj, cmd, *args: (cmd == "hitmyself" and args[0] in obj["smashers"]) and player_hit_trigger(player2, self.output)))
 
+        #----------------------------------------haolin
+        steelchain.triggers.append((lambda obj, cmd, *args: (cmd == "hitsteelchain" and args[0] in obj["smashers"]) and steelchain_hit_trigger(player3, steelchain, self.output)))
+
         if roomswitch == 1:
             self.room, self.player = room, player
             self.command_handler = self.command_handler_class(room, player, self.output)
@@ -571,7 +577,6 @@ class EscapeRoomGame:
 
     # -----------------------------------------tsts
     async def beast_agent(self, beast, lock):
-
         await asyncio.sleep(8)  # sleep before starting the while loop
         flag = 10
         while self.status == "playing" and beast["locked"]:
@@ -590,7 +595,21 @@ class EscapeRoomGame:
                     self.output("However, you find yourself awake suddenly. Seems like you come back to the first room!!")
                     self.status = "dead"
                     asyncio.ensure_future(gameswitch(switch=1))
+            await asyncio.sleep(5)
 
+    # -----------------------------------------haolin
+    async def blood_agent(self, player):
+        await asyncio.sleep(8)  # sleep before starting the while loop
+        flag = 100
+        while self.status == "playing" and player["bleeding"]:
+            self.output("You are now bleeding. After {} seconds, you will die.".format(flag))
+            flag = flag - 5
+            if flag == 0:
+                self.output("You are dead!!") 
+                await asyncio.sleep(3)
+                self.output("However, you find yourself awake suddenly. Seems like you come back to the second room!!")
+                self.status = "dead"
+                asyncio.ensure_future(gameswitch(switch=2))
             await asyncio.sleep(5)
 
     def start(self):
