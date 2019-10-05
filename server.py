@@ -3,6 +3,7 @@ Escape Room Core
 """
 import random, sys, asyncio
 from prompt import *
+from packet import *
 import pygame
 
 file = "playmusic.mp3"
@@ -364,7 +365,7 @@ def player_open_trigger(door, roomswitch, output):
     if roomswitch == 3:
         asyncio.ensure_future(gameswitch(switch=3))
         output("You feel a exdrodinary headache. Suddenly, you are now in THIRD room!!")
-    
+        
 
 # -----------------------------------------haolin
 def steelchain_hit_trigger(player, steelchain, output):
@@ -485,12 +486,12 @@ class EscapeRoomGame:
         self.status = "void"
 
     def create_game(self, roomswitch, cheat=False):
-        clock = EscapeRoomObject("clock", visible=True, time=100, hittable=False)
-        mirror = EscapeRoomObject("mirror", visible=True, standable=False, hittable=False)
-        hairpin = EscapeRoomObject("hairpin", visible=False, gettable=True, standable=False, hittable=False)
-        key = EscapeRoomObject("key", visible=True, gettable=True, interesting=True, standable=False, hittable=False)
+        clock = EscapeRoomObject("clock", visible=True, time=100)
+        mirror = EscapeRoomObject("mirror", visible=True, standable=False)
+        hairpin = EscapeRoomObject("hairpin", visible=False, gettable=True, standable=False)
+        key = EscapeRoomObject("key", visible=True, gettable=True, interesting=True, standable=False)
         door = EscapeRoomObject("door", visible=True, openable=True, open=False, keyed=True, locked=True,
-                                unlockers=[key], standable=False, hittable=False)
+                                unlockers=[key], standable=False)
         chest = EscapeRoomObject("chest", visible=True, openable=True, open=False, keyed=True, locked=True,
                                  unlockers=[hairpin], standable=False)
         room = EscapeRoomObject("room", visible=True)
@@ -520,7 +521,6 @@ class EscapeRoomGame:
         steelchain = EscapeRoomObject("steelchain", visible=True, gettable=False, hittable=True, smashers=[saw],
                                       broken=False)
         player3 = EscapeRoomObject("player3", visible=True, alive=True, hittable=True, smashers=[gun, saw], bleeding=False)
-
 
         # setup containers
         player["container"] = {}
@@ -697,31 +697,74 @@ def flush_output(*args, **kargs):
     sys.stdout.flush()
 
 
-async def gameswitch(switch):
-    loop = asyncio.get_event_loop()
-    game = EscapeRoomGame(output=flush_output)
-    if switch == 1:
-        game.create_game(roomswitch=switch)
-        game.start()
-        flush_output(">> ", end='')
-        loop.add_reader(sys.stdin, game_next_input, game)
-        await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
-    if switch == 2:
-        game.create_game(roomswitch=switch)
-        game.start()
-        flush_output(">> ", end='')
-        loop.add_reader(sys.stdin, game_next_input, game)
-        await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
-    if switch == 3:
-        game.create_game(roomswitch=switch)
-        game.start()
-        flush_output(">> ", end='')
-        loop.add_reader(sys.stdin, game_next_input, game)
-        await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
+class EchoServerClientProtocol(asyncio.Protocol):
+    def __init__(self):
+        self.loop = asyncio.get_event_loop()
+        self.deserializer = PacketType.Deserializer()
 
+    def connection_made(self, transport):
+        self.transport = transport
+
+    def data_received(self, data):
+        self.deserializer.update(data)
+        for serverPacket in self.deserializer.nextPackets():
+            if isinstance(serverPacket, GameInitPacket):
+                username = process_game_init(serverPacket)
+                print(username)
+                game_packet = create_game_require_pay_packet('qazwsx.edc,rfvmtgbnyhujikolp', "tfeng7_account", 5)
+                self.transport.write(game_packet.__serialize__())
+
+            if isinstance(serverPacket, GameCommandPacket):
+                print(serverPacket.command)
+                self.game.command(serverPacket.command)
+
+            if isinstance(serverPacket, GamePayPacket):
+                receipt, receipt_sig = process_game_pay_packet(serverPacket)
+                print(receipt)
+                print(receipt_sig)
+
+                def send_message(result):
+                    print(result)
+                    time.sleep(0.5)
+                    res_temp = create_game_response(result, self.game.status)
+                    self.transport.write(res_temp.__serialize__())
+
+                self.game = EscapeRoomGame(output=send_message)
+                self.loop.create_task(self.gameswitch(switch = 1))
+
+    async def gameswitch(switch):
+        if switch == 1:
+            game.create_game(roomswitch=switch)
+            game.start()
+            await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
+        if switch == 2:
+            game.create_game(roomswitch=switch)
+            game.start()
+            await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
+        if switch == 3:
+            game.create_game(roomswitch=switch)
+            game.start()
+            await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
 
 if __name__ == "__main__":
     run_start()
-    asyncio.ensure_future(gameswitch(switch=3))
-    asyncio.get_event_loop().run_forever()
+    loop = asyncio.get_event_loop()
+    # Each client connection will create a new protocol instance
+    coro = playground.create_server(EchoServerClientProtocol, 'localhost', 8866)
+    server = loop.run_until_complete(coro)
 
+    loop.set_debug(enabled=True)
+    from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
+
+    EnablePresetLogging(PRESET_DEBUG)
+    # Serve requests until Ctrl+C is pressed
+    print('Serving on {}'.format(server.sockets[0].getsockname()))
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+
+    # Close the server
+    server.close()
+    loop.run_until_complete(server.wait_closed())
+    loop.close()
