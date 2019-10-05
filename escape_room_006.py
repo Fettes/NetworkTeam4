@@ -195,7 +195,6 @@ class EscapeRoomCommandHandler:
                 self._run_triggers(target, "hitgyroscope", with_what)
             elif target_name == "steelchain":
                 self._run_triggers(target, "hitsteelchain", with_what)
-            
 
     def _cmd_inventory(self, inventory_args):
         """
@@ -365,7 +364,7 @@ def player_open_trigger(door, roomswitch, output):
     if roomswitch == 3:
         asyncio.ensure_future(gameswitch(switch=3))
         output("You feel a exdrodinary headache. Suddenly, you are now in THIRD room!!")
-        
+    
 
 # -----------------------------------------haolin
 def steelchain_hit_trigger(player, steelchain, output):
@@ -521,6 +520,7 @@ class EscapeRoomGame:
         steelchain = EscapeRoomObject("steelchain", visible=True, gettable=False, hittable=True, smashers=[saw],
                                       broken=False)
         player3 = EscapeRoomObject("player3", visible=True, alive=True, hittable=True, smashers=[gun, saw], bleeding=False)
+
 
         # setup containers
         player["container"] = {}
