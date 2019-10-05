@@ -5,6 +5,7 @@ from playground.network.packet import PacketType
 from playground.network.protocols.vsockets import VNICDumpProtocol
 from playground.network.protocols.packets.switching_packets import WirePacket
 
+from datasave import *
 
 class Protocol_factory(VNICDumpProtocol):
     def __init__(self, loop):
@@ -22,9 +23,11 @@ class Protocol_factory(VNICDumpProtocol):
                 print(packet.destinationPort)
                 print("{}".format(packet.fragData))
                 print(packet.data)
+                saveInFile(packet)
 
 
 if __name__ == "__main__":
+    createFile()
     loop = asyncio.get_event_loop()
     # Each client connection will create a new protocol instance
     coro = playground.connect.raw_vnic_connection(lambda: Protocol_factory(loop), vnicName="default")
