@@ -33,6 +33,7 @@ class EchoClient(asyncio.Protocol):
                 self.loop.create_task(self.Create_Payment(account, amount, unique_id))
             elif isinstance(gamePacket, GameResponsePacket):
                 print(gamePacket.response)
+                self.flush_output(">> ", end='')
 
 
 
@@ -49,7 +50,6 @@ class EchoClient(asyncio.Protocol):
         sys.stdout.flush()
 
     def game_next_input(self):
-        self.flush_output(">> ", end='')
         input = sys.stdin.readline().strip()
         self.command_packet = create_game_command(input)
         self.transport.write(self.command_packet.__serialize__())
