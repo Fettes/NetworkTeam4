@@ -7,6 +7,7 @@ from packet import *
 import pygame
 import playground
 
+
 # file = "playmusic.mp3"
 # pygame.mixer.init()
 # track = pygame.mixer.music.load(file)
@@ -731,9 +732,9 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 receipt, receipt_sig = process_game_pay_packet(serverPacket)
                 print(receipt)
                 print(receipt_sig)
-                #run_start(self.send_message)
+                # run_start(self.send_message)
 
-                # self.game = EscapeRoomGame(output=send_message)
+                gameswitch(switch=1)
 
                 def send_message(result):
                     print(result)
@@ -741,13 +742,13 @@ class EchoServerClientProtocol(asyncio.Protocol):
                     res_temp = create_game_response(result, self.game.status)
                     self.transport.write(res_temp.__serialize__())
 
-                async def gameswitch(switch):
+                def gameswitch(switch):
                     if switch == 1:
                         print("111111111111111111111111111111")
                         self.game = EscapeRoomGame(output=self.send_message)
                         self.game.create_game(roomswitch=switch)
                         self.game.start()
-                        await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
+                        self.loop.create_task(a for a in self.game.agents)
                     if switch == 2:
                         print("2222222222222222222222222222222")
                         self.game = EscapeRoomGame(output=self.send_message)
@@ -761,7 +762,6 @@ class EchoServerClientProtocol(asyncio.Protocol):
                         self.game.start()
                         await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
 
-                    self.loop.create_task(gameswitch(switch=1))
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
