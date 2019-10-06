@@ -10,7 +10,7 @@ bank_addr = "20194.0.1.1"
 bank_port = 888
 bank_stack = "default"
 bank_username = "tfeng7"
-certPath = "/home/student_20194/Tianshi_Feng/20194_online_bank.cert"
+certPath = "/home/student_20194/Tianshi_Feng/live_fire_bank.cert"
 bank_cert = loadCertFromFile(certPath)
 
 
