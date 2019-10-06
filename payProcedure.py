@@ -6,8 +6,8 @@ import playground, time
 import getpass, os, asyncio
 
 bankconfig = OnlineBankConfig()
-bank_addr = "20194.0.0.19000"
-bank_port = 777
+bank_addr = "20194.0.1.1"
+bank_port = 888
 bank_stack = "default"
 bank_username = "tfeng7"
 certPath = "/home/student_20194/Tianshi_Feng/20194_online_bank.cert"
