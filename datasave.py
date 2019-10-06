@@ -23,13 +23,9 @@ def saveInFile(packetData):
 
 
 def addcontent(packet):
-    print("1111111111111111")
     deserializer = PacketType.Deserializer()
-    print("222222222222222222222")
-    deserializer.updata(packet)
-    print("xxxxxxxxxxxxxxxxxxxxxxxxx")
+    deserializer.update(packet)
     for pkt in deserializer.nextPackets():
-        print("---------------------------------------------------------------1111111111111111111111")
         print(pkt)
         with open('log.txt', 'a') as f:
             f.write(str(pkt))
