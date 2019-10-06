@@ -61,7 +61,7 @@ class EchoClientProtocol(asyncio.Protocol):
 
 
 if __name__ == "__main__":
-    ip_addr, port = sys.argv[0:1]
+    ip_addr, port = sys.argv[0:2]
     loop = asyncio.get_event_loop()
     loop.set_debug(enabled=True)
     from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
