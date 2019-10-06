@@ -766,14 +766,12 @@ async def gameswitch(switch):
     if switch == 2:
         game.create_game(roomswitch=switch)
         game.start()
-        global game_server
         game_server = game
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
         return game
     if switch == 3:
         game.create_game(roomswitch=switch)
         game.start()
-        global game_server
         game_server = game
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
         return game
