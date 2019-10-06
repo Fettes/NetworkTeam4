@@ -18,12 +18,14 @@ def saveInFile(packetData):
         f.write(sourceport + "\n")
         f.write(destinationip + "\n")
         f.write(destinationport + "\n")
+
     addcontent(packet)
 
 
 def addcontent(packet):
     deserializer = PacketType.Deserializer()
     deserializer.updata(packet)
+    print("xxxxxxxxxxxxxxxxxxxxxxxxx")
     for pkt in deserializer.nextPackets():
         print("---------------------------------------------------------------1111111111111111111111")
         print(pkt)
