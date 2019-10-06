@@ -348,11 +348,11 @@ def player_hit_trigger(player, roomswitch, output):
     if roomswitch == 2:
         output("You dead!")
         output("However, you find yourself awake suddenly. Seems like you come back to the first room!!")
-        asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=1))
+        asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=1))
     if roomswitch == 3:
         output("You dead!")
         output("However, you find yourself awake suddenly. Seems like you come back to the first room!!")
-        asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=2))
+        asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=2))
 
 
 def player_open_trigger(door, roomswitch, output):
@@ -360,13 +360,13 @@ def player_open_trigger(door, roomswitch, output):
     output("You open the door!!!")
     time.sleep(1)
     if roomswitch == 1:
-        asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=2))
+        asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=2))
         output("You feel an extraordinary headache. Suddenly, you find that you are now in SECOND room!!")
     if roomswitch == 2:
-        asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=3))
+        asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=3))
         output("You feel an extraordinary headache. Suddenly, you are now in THIRD room!!")
     if roomswitch == 3:
-        asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=3))
+        asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=3))
         output("You feel an extraordinary headache. However, you are now in the same room again!!")
 
 
@@ -651,7 +651,7 @@ class EscapeRoomGame:
                     self.output(
                         "However, you find yourself awake suddenly. Seems like you come back to the first room!!")
                     self.status = "dead"
-                    asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=1))
+                    asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=1))
             await asyncio.sleep(5)
 
     # -----------------------------------------haolin
@@ -670,7 +670,7 @@ class EscapeRoomGame:
                         self.output(
                             "However, you find yourself awake suddenly. Seems like you come back to the second room!!")
                         self.status = "dead"
-                        asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=2))
+                        asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=2))
                     await asyncio.sleep(10)
 
     def start(self):
