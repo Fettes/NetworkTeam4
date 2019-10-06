@@ -603,10 +603,12 @@ class EscapeRoomGame:
             self.command_handler = self.command_handler_class(room, player, self.output)
             self.agents.append(self.flyingkey_agent(flyingkey))
         if roomswitch == 2:
+            print("22222222")
             self.room, self.player = room2, player2
             self.command_handler = self.command_handler_class(room2, player2, self.output)
             self.agents.append(self.beast_agent(beast, lock))
         if roomswitch == 3:
+            print("333333333333")
             self.room, self.player = room3, player3
             self.command_handler = self.command_handler_class(room3, player3, self.output)
             self.agents.append(self.blood_agent(player3, steelchain))
@@ -634,7 +636,7 @@ class EscapeRoomGame:
     # -----------------------------------------tsts
     async def beast_agent(self, beast, lock):
         await asyncio.sleep(8)  # sleep before starting the while loop
-        flag = 10
+        flag = 100
         while self.status == "playing" and beast["locked"]:
             self.output("The beast is destroying the lock which seems to break out soon. {} seconds left".format(flag))
             flag = flag - 2
@@ -712,6 +714,7 @@ def flush_output(*args, **kargs):
 
 class EchoServerClientProtocol(asyncio.Protocol):
     def __init__(self):
+        self.game = EscapeRoomGame()
         self.loop = asyncio.get_event_loop()
         self.deserializer = PacketType.Deserializer()
 
@@ -739,7 +742,6 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 print(receipt_sig)
                 # run_start(self.send_message)
 
-                self.game = EscapeRoomGame(output=self.send_message)
                 asyncio.ensure_future(self.gameswitch(switch=1))
 
     def send_message(self, result):
@@ -750,19 +752,16 @@ class EchoServerClientProtocol(asyncio.Protocol):
         self.transport.write(res_temp.__serialize__())
 
     async def gameswitch(self, switch):
+        self.game = EscapeRoomGame(output=self.send_message)
         if switch == 1:
-            self.game = EscapeRoomGame(output=self.send_message)
             self.game.create_game(roomswitch=switch)
             self.game.start()
             await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
         if switch == 2:
-            self.game = EscapeRoomGame(output=self.send_message)
             self.game.create_game(roomswitch=switch)
             self.game.start()
             await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
         if switch == 3:
-            print("33333333333333333333333333333333")
-            self.game = EscapeRoomGame(output=self.send_message)
             self.game.create_game(roomswitch=switch)
             self.game.start()
             await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
