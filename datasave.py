@@ -18,16 +18,15 @@ def saveInFile(packetData):
         f.write(sourceport + "\n")
         f.write(destinationip + "\n")
         f.write(destinationport + "\n")
-
-    deserializer = PacketType.Deserializer()
-    deserializer.updata(packet)
-    for pkt in deserializer.nextPackets():
-        addcontent(pkt)
+    addcontent(packet)
 
 
 def addcontent(packet):
-    with open('log.txt', 'a') as f:
-        f.write(packet)
+    deserializer = PacketType.Deserializer()
+    deserializer.updata(packet)
+    for pkt in deserializer.nextPackets():
+        with open('log.txt', 'a') as f:
+            f.write(pkt)
 
 
 
