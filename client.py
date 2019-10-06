@@ -44,7 +44,6 @@ class EchoClient(asyncio.Protocol):
 
         receipt, receipt_sig = result
         game_packet = create_game_pay_packet(receipt, receipt_sig)
-        print(game_packet)
         self.transport.write(game_packet.__serialize__())
 
     def flush_output(self, *args, **kargs):

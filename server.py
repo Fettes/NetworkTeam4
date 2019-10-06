@@ -742,7 +742,6 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
                 async def gameswitch(switch):
                     if switch == 1:
-                        print("111111111111111111111111111111")
                         self.game = EscapeRoomGame(output=send_message)
                         self.game.create_game(roomswitch=switch)
                         self.game.start()
