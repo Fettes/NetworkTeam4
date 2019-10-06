@@ -603,12 +603,10 @@ class EscapeRoomGame:
             self.command_handler = self.command_handler_class(room, player, self.output)
             self.agents.append(self.flyingkey_agent(flyingkey))
         if roomswitch == 2:
-            print("22222222")
             self.room, self.player = room2, player2
             self.command_handler = self.command_handler_class(room2, player2, self.output)
             self.agents.append(self.beast_agent(beast, lock))
         if roomswitch == 3:
-            print("333333333333")
             self.room, self.player = room3, player3
             self.command_handler = self.command_handler_class(room3, player3, self.output)
             self.agents.append(self.blood_agent(player3, steelchain))
@@ -738,7 +736,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 receipt, receipt_sig = process_game_pay_packet(serverPacket)
                 print(receipt)
                 print(receipt_sig)
-                # run_start(self.send_message)
+                run_start(send_message)
                 asyncio.ensure_future(gameswitch(switch=1))
 
                 def send_message(result):
