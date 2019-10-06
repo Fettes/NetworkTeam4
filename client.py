@@ -1,48 +1,49 @@
+import asyncio
+import time
+import playground
 from playground.network.packet import PacketType
-import playground, time
-import getpass, os, asyncio
+
 import sys
-
-from packet import *
 from payProcedure import *
+from packet import *
 
-
-class EchoClientProtocol(asyncio.Protocol):
-    def __init__(self, loop):
-        self.i = 0
-        self.loop = asyncio.get_event_loop()
-        self.deserializer = PacketType.Deserializer()
+class EchoClient(asyncio.Protocol):
+    def __init__(self):
+        pass
 
     def connection_made(self, transport):
-        print("Connected to {}".format(transport.get_extra_info("peername")))
+        self.loop = asyncio.get_event_loop()
+        self.loop.add_reader(sys.stdin, self.game_next_input)
         self.transport = transport
 
-        self.loop.add_reader(sys.stdin, self.game_next_input, transport)
-        packet = create_game_init_packet("tfeng7")
-        self.transport.write(packet.__serialize__())
+        self.command_packet = create_game_init_packet("tfeng7")
+        self.transport.write(self.command_packet.__serialize__())
 
     def data_received(self, data):
-        self.deserializer.update(data)
-        for clientPacket in self.deserializer.nextPackets():
-            if isinstance(clientPacket, GameRequirePayPacket):
-                unique_id, account, amount = process_game_require_pay_packet(clientPacket)
+        d = PacketType.Deserializer()
+        d.update(data)
+        for gamePacket in d.nextPackets():
+            if isinstance(gamePacket, GameRequirePayPacket):
+                print(gamePacket.amount)
+                unique_id, account, amount = process_game_require_pay_packet(gamePacket)
                 print(unique_id)
                 print(account)
                 print(amount)
-                self.loop.create_task(self.CreatePayment(account, amount, unique_id))
-
-            if isinstance(clientPacket, GameResponsePacket):
-                print(clientPacket.response)
-                self.flush_output(clientPacket.response())
+                self.loop.create_task(self.Create_Payment(account, amount, unique_id))
+            elif isinstance(gamePacket, GameResponsePacket):
+                print(gamePacket.response)
+                self.flush_output(gamePacket.response())
                 if self.i == 0:
                     self.flush_output(">>", end=' ')
-                    self.i += 1
+                    self.i +=1
 
-    async def CreatePayment(self, account, amount, unique_id):
+    async def Create_Payment(self, account, amount, unique_id):
         result = await paymentInit("tfeng7_account", account, amount, unique_id)
         print(result)
+
         receipt, receipt_sig = result
         game_packet = create_game_pay_packet(receipt, receipt_sig)
+        print(game_packet)
         self.transport.write(game_packet.__serialize__())
 
     def flush_output(self, *args, **kargs):
@@ -54,21 +55,15 @@ class EchoClientProtocol(asyncio.Protocol):
         self.command_packet = create_game_command(input)
         self.transport.write(self.command_packet.__serialize__())
 
-    def connection_lost(self, exc):
-        print('The server closed the connection')
-        print('Stop the event loop')
-        self.loop.stop()
-
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    loop.set_debug(enabled=True)
-    from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
 
-    #
-    EnablePresetLogging(PRESET_DEBUG)
-    coro = playground.create_connection(lambda: EchoClientProtocol(loop), "20194.0.1.1", 8866)
-    # coro = loop.create_connection(lambda: EchoClientProtocol(loop), 'localhost', 1024)
+    coro = playground.create_connection(EchoClient, '20194.5.20.30', 21021)
+
+    loop.set_debug(enabled=True)
+    #from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
+    #EnablePresetLogging(PRESET_DEBUG)
     loop.run_until_complete(coro)
     loop.run_forever()
     loop.close()
