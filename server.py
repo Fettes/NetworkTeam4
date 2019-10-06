@@ -702,6 +702,9 @@ def game_next_input(game):
         flush_output(">> ", end='')
 
 
+Transport_method = "1"
+
+
 def flush_output(*args, **kargs):
     print(*args, **kargs)
     sys.stdout.flush()
@@ -714,6 +717,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         self.transport = transport
+        Transport_method = transport
 
     def data_received(self, data):
         self.deserializer.update(data)
@@ -738,6 +742,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 asyncio.ensure_future(self.gameswitch(switch=1))
 
     def send_message(self, result):
+        self.transport = Transport_method
         print(result)
         time.sleep(0.5)
         res_temp = create_game_response(result, self.game.status)
@@ -750,7 +755,6 @@ class EchoServerClientProtocol(asyncio.Protocol):
             self.game.start()
             await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
         if switch == 2:
-            print("2222222222222222222222222222222")
             self.game = EscapeRoomGame(output=self.send_message)
             self.game.create_game(roomswitch=switch)
             self.game.start()
