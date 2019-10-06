@@ -717,6 +717,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         self.transport = transport
+        global Transport_method
         Transport_method = transport
 
     def data_received(self, data):
