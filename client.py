@@ -4,23 +4,12 @@ import getpass, os, asyncio
 import sys
 
 from packet import *
+from payProcedure import *
 
-
-
-
-def game_next_input(transport):
-    input = sys.stdin.readline().strip()
-    command_packet = create_game_command(input)
-    transport.write(command_packet.__serialize__())
-    flush_output(">> ", end='')
-
-def flush_output(*args, **kargs):
-    print(*args, **kargs)
-    sys.stdout.flush()
 
 class EchoClientProtocol(asyncio.Protocol):
     def __init__(self, loop):
-        self.flag = 0
+        self.i = 0
         self.loop = asyncio.get_event_loop()
         self.deserializer = PacketType.Deserializer()
 
@@ -43,9 +32,11 @@ class EchoClientProtocol(asyncio.Protocol):
                 self.loop.create_task(self.CreatePayment(account, amount, unique_id))
 
             if isinstance(clientPacket, GameResponsePacket):
-                res_temp = clientPacket.response
-                print("Response:\n", clientPacket.response, "\n")
-
+                print(clientPacket.response)
+                self.flush_output(clientPacket.response())
+                if self.i == 0:
+                    self.flush_output(">>", end=' ')
+                    self.i += 1
 
     async def CreatePayment(self, account, amount, unique_id):
         result = await paymentInit("tfeng7_account", account, amount, unique_id)
@@ -53,6 +44,15 @@ class EchoClientProtocol(asyncio.Protocol):
         receipt, receipt_sig = result
         game_packet = create_game_pay_packet(receipt, receipt_sig)
         self.transport.write(game_packet.__serialize__())
+
+    def flush_output(self, *args, **kargs):
+        print(*args, **kargs)
+        sys.stdout.flush()
+
+    def game_next_input(self):
+        input = sys.stdin.readline().strip()
+        self.command_packet = create_game_command(input)
+        self.transport.write(self.command_packet.__serialize__())
 
     def connection_lost(self, exc):
         print('The server closed the connection')
@@ -65,6 +65,7 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.set_debug(enabled=True)
     from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
+
     #
     EnablePresetLogging(PRESET_DEBUG)
     coro = playground.create_connection(lambda: EchoClientProtocol(loop), ip_addr, port)
