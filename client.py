@@ -61,14 +61,13 @@ class EchoClientProtocol(asyncio.Protocol):
 
 
 if __name__ == "__main__":
-    ip_addr, port = sys.argv[0:2]
     loop = asyncio.get_event_loop()
     loop.set_debug(enabled=True)
     from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
 
     #
     EnablePresetLogging(PRESET_DEBUG)
-    coro = playground.create_connection(lambda: EchoClientProtocol(loop), ip_addr, port)
+    coro = playground.create_connection(lambda: EchoClientProtocol(loop), "20194.0.1.1", 8866)
     # coro = loop.create_connection(lambda: EchoClientProtocol(loop), 'localhost', 1024)
     loop.run_until_complete(coro)
     loop.run_forever()
