@@ -18,13 +18,14 @@ class Protocol_factory(VNICDumpProtocol):
         self.deserializer.update(data_bytes)
         for packet in self.deserializer.nextPackets():
             if isinstance(packet, WirePacket):
-                print(packet.source)
-                print(packet.sourcePort)
-                print(packet.destination)
-                print(packet.destinationPort)
-                print("{}".format(packet.fragData))
-                print(packet.data)
-                saveInFile(packet)
+                #saveInFile(packet)
+                if "OpenSession".encode() in packet.data:
+                    print(packet.source)
+                    print(packet.sourcePort)
+                    print(packet.destination)
+                    print(packet.destinationPort)
+                    print(packet.data)
+
 
 
 if __name__ == "__main__":

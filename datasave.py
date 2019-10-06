@@ -25,7 +25,6 @@ def saveInFile(packetData):
 def addcontent(packet):
     deserializer = PacketType.Deserializer()
     deserializer.update(packet)
-    print("xxxxxxxxxxxxxxxxxxxxxxxxxx")
     for packet in deserializer.nextPackets():
         print(packet)
         with open('log.txt', 'a') as f:
