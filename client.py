@@ -33,9 +33,7 @@ class EchoClient(asyncio.Protocol):
                 self.loop.create_task(self.Create_Payment(account, amount, unique_id))
             elif isinstance(gamePacket, GameResponsePacket):
                 print(gamePacket.response)
-                self.flush_output(">>", end=' ')
-                response = str(gamePacket.response)
-                self.flush_output(response)
+
 
 
     async def Create_Payment(self, account, amount, unique_id):
@@ -54,16 +52,16 @@ class EchoClient(asyncio.Protocol):
         input = sys.stdin.readline().strip()
         self.command_packet = create_game_command(input)
         self.transport.write(self.command_packet.__serialize__())
-
+        self.flush_output(">> ", end='')
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
 
     coro = playground.create_connection(EchoClient, '20194.0.1.1', 8866)
 
-    loop.set_debug(enabled=True)
-    from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
-    EnablePresetLogging(PRESET_DEBUG)
+    # loop.set_debug(enabled=True)
+    # from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
+    # EnablePresetLogging(PRESET_DEBUG)
     loop.run_until_complete(coro)
     loop.run_forever()
     loop.close()
