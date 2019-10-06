@@ -49,10 +49,11 @@ class EchoClient(asyncio.Protocol):
         sys.stdout.flush()
 
     def game_next_input(self):
+        self.flush_output(">> ", end='')
         input = sys.stdin.readline().strip()
         self.command_packet = create_game_command(input)
         self.transport.write(self.command_packet.__serialize__())
-        self.flush_output(">> ", end='')
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
