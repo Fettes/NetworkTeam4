@@ -58,7 +58,7 @@ class EchoClient(asyncio.Protocol):
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
 
-    coro = playground.create_connection(EchoClient, '20194.0.1.1', 8866)
+    coro = playground.create_connection(EchoClient, '20194.0.1.1', 8886)
 
     # loop.set_debug(enabled=True)
     # from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
