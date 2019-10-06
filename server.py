@@ -705,6 +705,7 @@ def game_next_input(game):
 
 
 Transport_method = "1"
+game_server = "1"
 
 
 def flush_output(*args, **kargs):
@@ -739,11 +740,11 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 print(receipt)
                 print(receipt_sig)
                 # run_start(self.send_message)
-
-                self.game = asyncio.ensure_future(gameswitch(switch=1))
+                asyncio.ensure_future(gameswitch(switch=1))
+                self.game = game_server
 
                 def send_message(result):
-                    #self.transport = Transport_method
+                    # self.transport = Transport_method
                     print(result)
                     time.sleep(0.5)
                     res_temp = create_game_response(result, self.game.status)
@@ -758,18 +759,25 @@ async def gameswitch(switch):
     if switch == 1:
         game.create_game(roomswitch=switch)
         game.start()
+        global game_server
+        game_server = game
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
         return game
     if switch == 2:
         game.create_game(roomswitch=switch)
         game.start()
+        global game_server
+        game_server = game
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
         return game
     if switch == 3:
         game.create_game(roomswitch=switch)
         game.start()
+        global game_server
+        game_server = game
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
         return game
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
