@@ -7,6 +7,7 @@ from playground.network.protocols.packets.switching_packets import WirePacket
 
 from datasave import *
 
+
 class Protocol_factory(VNICDumpProtocol):
     def __init__(self, loop):
         self.loop = loop
