@@ -25,6 +25,7 @@ def addcontent(packet):
     deserializer = PacketType.Deserializer()
     deserializer.updata(packet)
     for pkt in deserializer.nextPackets():
+        print("---------------------------------------------------------------1111111111111111111111")
         print(pkt)
         with open('log.txt', 'a') as f:
             f.write(str(pkt))
