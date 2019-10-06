@@ -760,7 +760,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
                         self.game.start()
                         await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
                 self.game = EscapeRoomGame(output=send_message)
-                gameswitch(switch=1)
+                asyncio.ensure_future(gameswitch(switch=1))
 
 
 if __name__ == "__main__":
