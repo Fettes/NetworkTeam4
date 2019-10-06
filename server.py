@@ -705,7 +705,7 @@ def game_next_input(game):
 
 
 Transport_method = "1"
-game_server = "1"
+game_server = EscapeRoomGame()
 
 
 def flush_output(*args, **kargs):
