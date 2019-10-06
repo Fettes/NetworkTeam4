@@ -734,8 +734,6 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 print(receipt_sig)
                 # run_start(self.send_message)
 
-                gameswitch(switch=1)
-
                 def send_message(result):
                     print(result)
                     time.sleep(0.5)
@@ -745,22 +743,24 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 def gameswitch(switch):
                     if switch == 1:
                         print("111111111111111111111111111111")
-                        self.game = EscapeRoomGame(output=self.send_message)
+                        self.game = EscapeRoomGame(output=send_message)
                         self.game.create_game(roomswitch=switch)
                         self.game.start()
                         self.loop.create_task(a for a in self.game.agents)
                     if switch == 2:
                         print("2222222222222222222222222222222")
-                        self.game = EscapeRoomGame(output=self.send_message)
+                        self.game = EscapeRoomGame(output=send_message)
                         self.game.create_game(roomswitch=switch)
                         self.game.start()
                         self.loop.create_task(a for a in self.game.agents)
                     if switch == 3:
                         print("33333333333333333333333333333333")
-                        self.game = EscapeRoomGame(output=self.send_message)
+                        self.game = EscapeRoomGame(output=send_message)
                         self.game.create_game(roomswitch=switch)
                         self.game.start()
                         self.loop.create_task(a for a in self.game.agents)
+
+                    gameswitch(switch=1)
 
 
 if __name__ == "__main__":
