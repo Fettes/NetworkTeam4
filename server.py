@@ -740,25 +740,25 @@ class EchoServerClientProtocol(asyncio.Protocol):
                     res_temp = create_game_response(result, self.game.status)
                     self.transport.write(res_temp.__serialize__())
 
-                def gameswitch(switch):
+                async def gameswitch(switch):
                     if switch == 1:
                         print("111111111111111111111111111111")
                         self.game = EscapeRoomGame(output=send_message)
                         self.game.create_game(roomswitch=switch)
                         self.game.start()
-                        self.loop.create_task(a for a in self.game.agents)
+                        await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
                     if switch == 2:
                         print("2222222222222222222222222222222")
                         self.game = EscapeRoomGame(output=send_message)
                         self.game.create_game(roomswitch=switch)
                         self.game.start()
-                        self.loop.create_task(a for a in self.game.agents)
+                        await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
                     if switch == 3:
                         print("33333333333333333333333333333333")
                         self.game = EscapeRoomGame(output=send_message)
                         self.game.create_game(roomswitch=switch)
                         self.game.start()
-                        self.loop.create_task(a for a in self.game.agents)
+                        await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
                 self.game = EscapeRoomGame(output=send_message)
                 gameswitch(switch=1)
 
