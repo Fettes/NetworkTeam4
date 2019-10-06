@@ -734,14 +734,14 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 print(receipt_sig)
                 # run_start(self.send_message)
 
-                def send_message(result):
-                    print(result)
-                    time.sleep(0.5)
-                    res_temp = create_game_response(result, self.game.status)
-                    self.transport.write(res_temp.__serialize__())
-
-                self.game = EscapeRoomGame(output=send_message)
+                self.game = EscapeRoomGame(output=self.send_message)
                 asyncio.ensure_future(self.gameswitch(switch=1))
+
+    def send_message(self, result):
+        print(result)
+        time.sleep(0.5)
+        res_temp = create_game_response(result, self.game.status)
+        self.transport.write(res_temp.__serialize__())
 
     async def gameswitch(self, switch):
         if switch == 1:
