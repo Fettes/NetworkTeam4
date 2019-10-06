@@ -7,6 +7,7 @@ import sys
 from payProcedure import *
 from packet import *
 
+
 class EchoClient(asyncio.Protocol):
     def __init__(self):
         pass
@@ -35,7 +36,7 @@ class EchoClient(asyncio.Protocol):
                 self.flush_output(gamePacket.response())
                 if self.i == 0:
                     self.flush_output(">>", end=' ')
-                    self.i +=1
+                    self.i += 1
 
     async def Create_Payment(self, account, amount, unique_id):
         result = await paymentInit("tfeng7_account", account, amount, unique_id)
@@ -62,8 +63,8 @@ if __name__ == "__main__":
     coro = playground.create_connection(EchoClient, '20194.0.1.1', 8866)
 
     loop.set_debug(enabled=True)
-    #from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
-    #EnablePresetLogging(PRESET_DEBUG)
+    from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
+    EnablePresetLogging(PRESET_DEBUG)
     loop.run_until_complete(coro)
     loop.run_forever()
     loop.close()
