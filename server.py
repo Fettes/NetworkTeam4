@@ -731,6 +731,8 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 receipt, receipt_sig = process_game_pay_packet(serverPacket)
                 print(receipt)
                 print(receipt_sig)
+                #run_start(self.send_message)
+                self.game = EscapeRoomGame(output=self.send_message)
                 self.loop.create_task(self.gameswitch(switch=1))
 
     def send_message(self, result):
@@ -758,7 +760,6 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
 
 if __name__ == "__main__":
-    run_start()
     loop = asyncio.get_event_loop()
     # Each client connection will create a new protocol instance
     coro = playground.create_server(EchoServerClientProtocol, 'localhost', 8866)
