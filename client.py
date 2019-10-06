@@ -17,7 +17,7 @@ class EchoClientProtocol(asyncio.Protocol):
         print("Connected to {}".format(transport.get_extra_info("peername")))
         self.transport = transport
 
-        self.loop.add_reader(sys.stdin, game_next_input, transport)
+        self.loop.add_reader(sys.stdin, self.game_next_input, transport)
         packet = create_game_init_packet("tfeng7")
         self.transport.write(packet.__serialize__())
 
