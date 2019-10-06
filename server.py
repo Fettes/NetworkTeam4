@@ -720,7 +720,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
             if isinstance(serverPacket, GameInitPacket):
                 username = process_game_init(serverPacket)
                 print(username)
-                game_packet = create_game_require_pay_packet('qazwsx.edc,rfvmtgbnyhujikolp', "tfeng7_account", 5)
+                game_packet = create_game_require_pay_packet('qazwsx.edc,rfvmtgbnyhujikolp', "tfeng7_account", 1)
                 self.transport.write(game_packet.__serialize__())
 
             if isinstance(serverPacket, GameCommandPacket):
@@ -743,19 +743,19 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
     async def gameswitch(self, switch):
         if switch == 1:
-            game = EscapeRoomGame(output=self.send_message)
-            game.create_game(roomswitch=switch)
-            game.start()
+            self.game = EscapeRoomGame(output=self.send_message)
+            self.game.create_game(roomswitch=switch)
+            self.game.start()
             await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
         if switch == 2:
-            game = EscapeRoomGame(output=self.send_message)
-            game.create_game(roomswitch=switch)
-            game.start()
+            self.game = EscapeRoomGame(output=self.send_message)
+            self.game.create_game(roomswitch=switch)
+            self.game.start()
             await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
         if switch == 3:
-            game = EscapeRoomGame(output=self.send_message)
-            game.create_game(roomswitch=switch)
-            game.start()
+            self.game = EscapeRoomGame(output=self.send_message)
+            self.game.create_game(roomswitch=switch)
+            self.game.start()
             await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
 
 
