@@ -634,7 +634,7 @@ class EscapeRoomGame:
     # -----------------------------------------tsts
     async def beast_agent(self, beast, lock):
         await asyncio.sleep(8)  # sleep before starting the while loop
-        flag = 100
+        flag = 50
         while self.status == "playing" and beast["locked"]:
             self.output("The beast is destroying the lock which seems to break out soon. {} seconds left".format(flag))
             flag = flag - 2
@@ -736,7 +736,6 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 receipt, receipt_sig = process_game_pay_packet(serverPacket)
                 print(receipt)
                 print(receipt_sig)
-                run_start(send_message)
                 asyncio.ensure_future(gameswitch(switch=1))
 
                 def send_message(result):
@@ -746,6 +745,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
                     res_temp = create_game_response(result, game_server.status)
                     self.transport.write(res_temp.__serialize__())
 
+                run_start(send_message)
                 global Transport_method
                 Transport_method = send_message
 
