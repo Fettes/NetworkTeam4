@@ -5,6 +5,7 @@ import random, sys, asyncio
 from prompt import *
 from packet import *
 import pygame
+import playground
 
 file = "playmusic.mp3"
 pygame.mixer.init()
