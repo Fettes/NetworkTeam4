@@ -7,10 +7,11 @@ from packet import *
 import pygame
 import playground
 
-file = "playmusic.mp3"
-pygame.mixer.init()
-track = pygame.mixer.music.load(file)
-pygame.mixer.music.play()
+
+# file = "playmusic.mp3"
+# pygame.mixer.init()
+# track = pygame.mixer.music.load(file)
+# pygame.mixer.music.play()
 
 
 def create_container_contents(*escape_room_objects):
@@ -347,11 +348,11 @@ def player_hit_trigger(player, roomswitch, output):
     if roomswitch == 2:
         output("You dead!")
         output("However, you find yourself awake suddenly. Seems like you come back to the first room!!")
-        asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=1))
+        asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=1))
     if roomswitch == 3:
         output("You dead!")
         output("However, you find yourself awake suddenly. Seems like you come back to the first room!!")
-        asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=2))
+        asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=2))
 
 
 def player_open_trigger(door, roomswitch, output):
@@ -359,13 +360,13 @@ def player_open_trigger(door, roomswitch, output):
     output("You open the door!!!")
     time.sleep(1)
     if roomswitch == 1:
-        asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=2))
+        asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=2))
         output("You feel an extraordinary headache. Suddenly, you find that you are now in SECOND room!!")
     if roomswitch == 2:
-        asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=3))
+        asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=3))
         output("You feel an extraordinary headache. Suddenly, you are now in THIRD room!!")
     if roomswitch == 3:
-        asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=3))
+        asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=3))
         output("You feel an extraordinary headache. However, you are now in the same room again!!")
 
 
@@ -650,7 +651,7 @@ class EscapeRoomGame:
                     self.output(
                         "However, you find yourself awake suddenly. Seems like you come back to the first room!!")
                     self.status = "dead"
-                    asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=1))
+                    asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=1))
             await asyncio.sleep(5)
 
     # -----------------------------------------haolin
@@ -669,7 +670,7 @@ class EscapeRoomGame:
                         self.output(
                             "However, you find yourself awake suddenly. Seems like you come back to the second room!!")
                         self.status = "dead"
-                        asyncio.ensure_future(EchoServerClientProtocol.gameswitch(switch=2))
+                        asyncio.ensure_future(EchoServerClientProtocol.data_received.gameswitch(switch=2))
                     await asyncio.sleep(10)
 
     def start(self):
@@ -714,6 +715,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         self.transport = transport
 
+
     def data_received(self, data):
         self.deserializer.update(data)
         for serverPacket in self.deserializer.nextPackets():
@@ -731,32 +733,33 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 receipt, receipt_sig = process_game_pay_packet(serverPacket)
                 print(receipt)
                 print(receipt_sig)
-                #run_start(self.send_message)
-                self.game = EscapeRoomGame(output=self.send_message)
-                self.loop.create_task(self.gameswitch(switch=1))
+                # run_start(self.send_message)
 
-    def send_message(self, result):
-        print(result)
-        time.sleep(0.5)
-        res_temp = create_game_response(result, self.game.status)
-        self.transport.write(res_temp.__serialize__())
+                # self.game = EscapeRoomGame(output=send_message)
+                self.loop.create_task(gameswitch(switch=1))
 
-    async def gameswitch(self, switch):
-        if switch == 1:
-            self.game = EscapeRoomGame(output=self.send_message)
-            self.game.create_game(roomswitch=switch)
-            self.game.start()
-            await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
-        if switch == 2:
-            self.game = EscapeRoomGame(output=self.send_message)
-            self.game.create_game(roomswitch=switch)
-            self.game.start()
-            await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
-        if switch == 3:
-            self.game = EscapeRoomGame(output=self.send_message)
-            self.game.create_game(roomswitch=switch)
-            self.game.start()
-            await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
+                def send_message(result):
+                    print(result)
+                    time.sleep(0.5)
+                    res_temp = create_game_response(result, self.game.status)
+                    self.transport.write(res_temp.__serialize__())
+
+                async def gameswitch(switch):
+                    if switch == 1:
+                        self.game = EscapeRoomGame(output=send_message)
+                        self.game.create_game(roomswitch=switch)
+                        self.game.start()
+                        await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
+                    if switch == 2:
+                        self.game = EscapeRoomGame(output=send_message)
+                        self.game.create_game(roomswitch=switch)
+                        self.game.start()
+                        await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
+                    if switch == 3:
+                        self.game = EscapeRoomGame(output=send_message)
+                        self.game.create_game(roomswitch=switch)
+                        self.game.start()
+                        await asyncio.wait([asyncio.ensure_future(a) for a in self.game.agents])
 
 
 if __name__ == "__main__":
