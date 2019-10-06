@@ -7,10 +7,10 @@ def createFile():
 
 
 def saveInFile(packetData):
-    sourceip = packetData.source + ""
-    sourceport = packetData.sourcePort + ""
-    destinationip = packetData.destination + ""
-    destinationport = packetData.destinationPort + ""
+    sourceip = packetData.source
+    sourceport = packetData.sourcePort
+    destinationip = packetData.destination
+    destinationport = packetData.destinationPort
     packet = packetData.data
     with open('log.txt', 'a') as f:
         f.write("------------------------------\n")
@@ -26,8 +26,8 @@ def saveInFile(packetData):
 
 
 def addcontent(packet):
-    for field in packet.FIELDS:
-        with open('log.txt', 'a') as f:
+    with open('log.txt', 'a') as f:
+        f.write(packet)
 
 
 
