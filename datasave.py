@@ -12,7 +12,7 @@ def saveInFile(packetData):
     destinationip = packetData.destination
     destinationport = str(packetData.destinationPort)
     packet = packetData.data
-    print(packet)
+    addcontent(packet)
     with open('log.txt', 'a') as f:
         f.write("------------------------------\n")
         f.write(sourceip + "\n")
@@ -20,7 +20,6 @@ def saveInFile(packetData):
         f.write(destinationip + "\n")
         f.write(destinationport + "\n")
 
-    addcontent(packet)
 
 
 def addcontent(packet):
