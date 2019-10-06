@@ -715,7 +715,6 @@ def flush_output(*args, **kargs):
 
 class EchoServerClientProtocol(asyncio.Protocol):
     def __init__(self):
-        self.game = EscapeRoomGame()
         self.loop = asyncio.get_event_loop()
         self.deserializer = PacketType.Deserializer()
 
@@ -733,7 +732,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
             if isinstance(serverPacket, GameCommandPacket):
                 print(serverPacket.command)
-                self.game.command(serverPacket.command)
+                game_server.command(serverPacket.command)
 
             if isinstance(serverPacket, GamePayPacket):
                 receipt, receipt_sig = process_game_pay_packet(serverPacket)
@@ -741,13 +740,12 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 print(receipt_sig)
                 # run_start(self.send_message)
                 asyncio.ensure_future(gameswitch(switch=1))
-                self.game = game_server
 
                 def send_message(result):
                     # self.transport = Transport_method
                     print(result)
                     time.sleep(0.5)
-                    res_temp = create_game_response(result, self.game.status)
+                    res_temp = create_game_response(result, game_server.status)
                     self.transport.write(res_temp.__serialize__())
 
                 global Transport_method
@@ -756,25 +754,23 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
 async def gameswitch(switch):
     game = EscapeRoomGame(output=Transport_method)
+    global game_server
+    game_server = game
     if switch == 1:
         game.create_game(roomswitch=switch)
         game.start()
-        global game_server
-        game_server = game
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
-        return game
+
     if switch == 2:
         game.create_game(roomswitch=switch)
         game.start()
-        game_server = game
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
-        return game
+
     if switch == 3:
         game.create_game(roomswitch=switch)
         game.start()
-        game_server = game
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
-        return game
+
 
 
 if __name__ == "__main__":
