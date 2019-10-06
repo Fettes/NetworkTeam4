@@ -735,7 +735,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 print(receipt_sig)
                 # run_start(self.send_message)
 
-                # self.game = EscapeRoomGame(output=send_message)
+                self.game = EscapeRoomGame(output=send_message)
                 self.loop.create_task(gameswitch(switch=1))
 
                 def send_message(result):
