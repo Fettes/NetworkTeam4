@@ -33,10 +33,10 @@ class EchoClient(asyncio.Protocol):
                 self.loop.create_task(self.Create_Payment(account, amount, unique_id))
             elif isinstance(gamePacket, GameResponsePacket):
                 print(gamePacket.response)
-                self.flush_output(gamePacket.response())
-                if self.i == 0:
-                    self.flush_output(">>", end=' ')
-                    self.i += 1
+                self.flush_output(">>", end=' ')
+                response = str(gamePacket.response)
+                self.flush_output(response)
+
 
     async def Create_Payment(self, account, amount, unique_id):
         result = await paymentInit("tfeng7_account", account, amount, unique_id)
