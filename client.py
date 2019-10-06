@@ -3,7 +3,7 @@ import playground, time
 import getpass, os, asyncio
 import sys
 
-from escape_room_packets import *
+from packet import *
 
 
 
