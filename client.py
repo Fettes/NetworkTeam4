@@ -3,11 +3,8 @@ import playground, time
 import getpass, os, asyncio
 import sys
 
-from autograder_ex6_packets import AutogradeStartTest
-from autograder_ex6_packets import AutogradeTestStatus
-
 from escape_room_packets import *
-from payProcedure import *
+
 
 
 
