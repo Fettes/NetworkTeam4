@@ -1,6 +1,6 @@
-
 from playground.network.packet import PacketType
-
+from playground.network.packet.fieldtypes import STRING, UINT8, BUFFER, UINT16, BOOL
+from playground.network.packet.fieldtypes.attributes import Optional
 
 class HandshakePacket(PacketType):
     DEFINITION_IDENTIFIER = "handshakepacket"
