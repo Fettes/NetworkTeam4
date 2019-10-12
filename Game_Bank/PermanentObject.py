@@ -7,7 +7,7 @@ import pickle, sys
 
 sys.path.append("../..")
 
-from CipherUtil import *
+from Game_Bank.CipherUtil import *
 
 import struct
 

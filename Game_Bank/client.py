@@ -1,11 +1,10 @@
 import asyncio
-import time
 import playground
 from playground.network.packet import PacketType
 
 import sys
-from payProcedure import *
-from packet import *
+from Game_Bank.payProcedure import *
+from Game_Bank.packet import *
 
 
 class EchoClient(asyncio.Protocol):

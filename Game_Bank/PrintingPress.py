@@ -10,9 +10,9 @@ sys.path.append("../..")
 import time, random, os
 import getpass
 
-from Exchange import BitPoint
-from PermanentObject import PermanentObjectMixin
-from CipherUtil import RSA_SIGNATURE_MAC, loadCertFromFile, loadPrivateKeyFromPemFile, getCertSubject
+from Game_Bank.Exchange import BitPoint
+from Game_Bank.PermanentObject import PermanentObjectMixin
+from Game_Bank.CipherUtil import RSA_SIGNATURE_MAC, loadCertFromFile, loadPrivateKeyFromPemFile, getCertSubject
 
 
 class BitPointVerifier(object):

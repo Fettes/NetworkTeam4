@@ -1,8 +1,8 @@
 """
 Escape Room Core
 """
-import random, sys, asyncio
-from prompt import *
+import asyncio
+from Game_Bank.prompt import *
 import pygame
 
 file = "playmusic.mp3"

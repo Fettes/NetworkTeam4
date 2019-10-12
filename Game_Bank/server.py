@@ -1,10 +1,9 @@
 """
 Escape Room Core
 """
-import random, sys, asyncio
-from prompt import *
-from packet import *
-import pygame
+import asyncio
+from Game_Bank.prompt import *
+from Game_Bank.packet import *
 import playground
 
 
@@ -745,7 +744,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
                     res_temp = create_game_response(result, game_server.status)
                     self.transport.write(res_temp.__serialize__())
 
-                run_start(send_message)
+                #run_start(send_message)
                 global Transport_method
                 Transport_method = send_message
 

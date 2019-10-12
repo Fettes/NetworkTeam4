@@ -5,7 +5,7 @@ Created on Mar 27, 2014
 '''
 
 import sys, os, getpass, shelve, time, traceback, stat
-import datetime, asyncio, argparse, configparser, shutil
+import datetime, asyncio, argparse, shutil
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -15,25 +15,23 @@ from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import hashes
 # from contextlib import closing
 
-from BankMessages import *
-from Exchange import BitPoint
+from Game_Bank.BankMessages import *
+from Game_Bank.Exchange import BitPoint
 
-from BankCore import LedgerOperationSuccess, Ledger, LedgerLine # For unshelving
-from OnlineBankConfig import OnlineBankConfig
+from Game_Bank.BankCore import LedgerOperationSuccess, Ledger  # For unshelving
+from Game_Bank.OnlineBankConfig import OnlineBankConfig
 
-from BankServerProtocol import BankServerProtocol
-from PrintingPress import PrintingPress, DefaultSerializer
+from Game_Bank.BankServerProtocol import BankServerProtocol
+from Game_Bank.PrintingPress import PrintingPress, DefaultSerializer
 
 # TODO: Change to match actual playground layout (gotta push these too)
-from CipherUtil import SHA, loadCertFromFile, loadPrivateKeyFromPemFile, RSA_SIGNATURE_MAC
-from ErrorHandler import ErrorHandler
-from PacketHandler import SimplePacketHandler
+from Game_Bank.CipherUtil import SHA, loadCertFromFile, loadPrivateKeyFromPemFile, RSA_SIGNATURE_MAC
+from Game_Bank.ErrorHandler import ErrorHandler
+from Game_Bank.PacketHandler import SimplePacketHandler
 
 import playground
 from playground import Configure
 from playground.network.common.Protocol import StackingProtocol
-from playground.network.common.PlaygroundAddress import PlaygroundAddress
-from playground.network.packet.PacketType import FIELD_NOT_SET
 from playground.common.io.ui import CLIShell
 
 import logging
