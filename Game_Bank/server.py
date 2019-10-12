@@ -1,14 +1,17 @@
 """
 Escape Room Core
 """
-import random, sys, asyncio
-from prompt import *
-import pygame
+import asyncio
+from Game_Bank.prompt import *
+from Game_Bank.packet import *
+import playground
 
-file="playmusic.mp3"
-pygame.mixer.init()
-track = pygame.mixer.music.load(file)
-pygame.mixer.music.play()
+
+# file = "playmusic.mp3"
+# pygame.mixer.init()
+# track = pygame.mixer.music.load(file)
+# pygame.mixer.music.play()
+
 
 def create_container_contents(*escape_room_objects):
     return {obj.name: obj for obj in escape_room_objects}
@@ -38,7 +41,7 @@ class EscapeRoomObject:
 
 
 class EscapeRoomCommandHandler:
-    def __init__(self, room, player, output=print):  # 需要加两个room
+    def __init__(self, room, player, output=print):
         self.room = room
         self.player = player
         self.output = output
@@ -154,7 +157,12 @@ class EscapeRoomCommandHandler:
             return self.output("What do you want to hit?")
         target_name = hit_args[0]
         if target_name == "myself":
-            target_name = "player2"
+            if self.player.name == "player":
+                target_name = "player"
+            if self.player.name == "player2":
+                target_name = "player2"
+            if self.player.name == "player3":
+                target_name = "player3"
         with_what_name = None
         if len(hit_args) != 1:
             with_what_name = hit_args[-1]
@@ -172,19 +180,23 @@ class EscapeRoomCommandHandler:
         if not target["hittable"]:
             return self.output("You can't hit that!")
         else:
-            self.output("You hit the {} with the {}".format(target_name, with_what_name))           
+            self.output("You hit the {} with the {}".format(target_name, with_what_name))
             if target_name == "flyingkey":
                 self._run_triggers(target, "hit", with_what)
             elif target_name == "beast":
                 self._run_triggers(target, "hitbeast", with_what)
             elif target_name == "lock":
                 self._run_triggers(target, "hitlock", with_what)
+            elif target_name == "player":
+                self._run_triggers(target, "hitmyself", with_what)
             elif target_name == "player2":
+                self._run_triggers(target, "hitmyself", with_what)
+            elif target_name == "player3":
                 self._run_triggers(target, "hitmyself", with_what)
             elif target_name == "gyroscope":
                 self._run_triggers(target, "hitgyroscope", with_what)
             elif target_name == "steelchain":
-                self._run_triggers(target, "hitsteelchain", with_what) 
+                self._run_triggers(target, "hitsteelchain", with_what)
 
     def _cmd_inventory(self, inventory_args):
         """
@@ -198,7 +210,7 @@ class EscapeRoomCommandHandler:
         self._run_triggers(object, "inventory")
         self.output("You are carrying {}".format(items))
 
-    #--------------------------------------------------tsts
+    # --------------------------------------------------tsts
 
     def _cmd_stand(self, stand_args):
         if not stand_args:
@@ -249,7 +261,8 @@ def create_room_description(room):
 and it is locked. Above the door is a clock that reads {clock_time}.
 Across from the door is a large {mirror}. Below the mirror is an old chest.
 
-The room is old and musty and the floor is creaky and warped.{interesting}""".format(**room_data)
+The room is old and musty and the floor is creaky and warped. This is not a simple game,
+try to win this in another way? Like Inception {interesting}""".format(**room_data)
 
 
 def create_door_description(door):
@@ -309,34 +322,58 @@ def flyingkey_hit_trigger(room, flyingkey, key, output):
             "The flying key falls off the wall. When it hits the ground, it's wings break off and you now see an ordinary key.")
 
 
-#-------------------------------------------tsts
+# -------------------------------------------tsts
 def beast_hit_trigger(beast, key, output):
     if beast["alive"] == True:
-        output("You quickly it!")
-    else:
         beast["alive"] = False
         key["gettable"] = True
         output("You kill the beast and you find a shinning key in its hand. ")
+    else:
+        output("It is already dead. ")
+
 
 def lock_hit_trigger(lock, beast, output):
     lock["locked"] = False
     output("The lock destroyed and the cage open. The beast comes out!!!")
     beast["locked"] = False
+    beast["hittable"] = True
     output("You are defending the beast with axe, try to hit it.")
 
-def player_hit_trigger(player, output):
-    #player["alive"] = False
-    output("You dead!")
-    output("However, you find yourself awake suddenly. Seems like you come back to the first room!!")
-    asyncio.ensure_future(gameswitch(switch=1))
+
+def player_hit_trigger(player, roomswitch, output):
+    if roomswitch == 1:
+        player["alive"] = False
+        output("You dead!")
+    if roomswitch == 2:
+        output("You dead!")
+        output("However, you find yourself awake suddenly. Seems like you come back to the first room!!")
+        asyncio.ensure_future(gameswitch(switch=1))
+    if roomswitch == 3:
+        output("You dead!")
+        output("However, you find yourself awake suddenly. Seems like you come back to the first room!!")
+        asyncio.ensure_future(gameswitch(switch=2))
 
 
-#-----------------------------------------haolin
+def player_open_trigger(door, roomswitch, output):
+    # player["alive"] = False
+    output("You open the door!!!")
+    time.sleep(1)
+    if roomswitch == 1:
+        asyncio.ensure_future(gameswitch(switch=2))
+        output("You feel an extraordinary headache. Suddenly, you find that you are now in SECOND room!!")
+    if roomswitch == 2:
+        asyncio.ensure_future(gameswitch(switch=3))
+        output("You feel an extraordinary headache. Suddenly, you are now in THIRD room!!")
+    if roomswitch == 3:
+        asyncio.ensure_future(gameswitch(switch=3))
+        output("You feel an extraordinary headache. However, you are now in the same room again!!")
+
+
+# -----------------------------------------haolin
 def steelchain_hit_trigger(player, steelchain, output):
     player["bleeding"] = True
     steelchain["broken"] = True
     output("Although you break the steelchain successfully. However, you hurt your legs accidentally!")
-    asyncio.ensure_future(blood_agent(player))
 
 
 def short_description(object):
@@ -412,24 +449,28 @@ def create_gyroscope_description(gyroscope):
     return description
 
 
-#---------------------------------------------------------------------------------------------haolin
+# ---------------------------------------------------------------------------------------------haolin
 def create_gun_description(gun):
     description = "A shotgun, you can use it to kill anyone, or, yourself."
     return description
+
 
 def create_saw_description(saw):
     description = "A saw. People sometimes use it to do something cruel."
     return description
 
+
 def create_bullet_description(bullet):
-    description= "You see a bullet inside the magazine. Only one. So make up your mind before using it."
+    description = "You see a bullet inside the magazine. Only one. So make up your mind before using it."
     return description
+
 
 def create_steelchain_description(steelchain):
     description = "A steelchain is on your leg and you are chained up."
     if steelchain["broken"]:
-        description="A broken steelchain. You just broke it."
+        description = "A broken steelchain. You just broke it."
     return description
+
 
 def create_room3_description(room3):
     return """You are in a dark room. There is no mirror or clock. You are lucky since the door is unlocked but you can't move around because you are chained up with a steelchain. 
@@ -446,50 +487,54 @@ class EscapeRoomGame:
         self.agents = []
         self.status = "void"
 
-    def create_game(self, roomswitch=1, cheat=False):
+    def create_game(self, roomswitch, cheat=False):
         clock = EscapeRoomObject("clock", visible=True, time=100)
-        mirror = EscapeRoomObject("mirror", visible=True, standable = False)
-        hairpin = EscapeRoomObject("hairpin", visible=False, gettable=True, standable = False)
-        key = EscapeRoomObject("key", visible=True, gettable=True, interesting=True, standable = False)
+        mirror = EscapeRoomObject("mirror", visible=True, standable=False)
+        hairpin = EscapeRoomObject("hairpin", visible=False, gettable=True, standable=False)
+        key = EscapeRoomObject("key", visible=True, gettable=True, interesting=True, standable=False)
         door = EscapeRoomObject("door", visible=True, openable=True, open=False, keyed=True, locked=True,
-                                unlockers=[key], standable = False)
+                                unlockers=[key], standable=False)
         chest = EscapeRoomObject("chest", visible=True, openable=True, open=False, keyed=True, locked=True,
-                                 unlockers=[hairpin], standable = False)
+                                 unlockers=[hairpin], standable=False)
         room = EscapeRoomObject("room", visible=True)
-        player = EscapeRoomObject("player", visible=False, alive=True)
         hammer = EscapeRoomObject("hammer", visible=True, gettable=True)
+        player = EscapeRoomObject("player", visible=True, alive=True, hittable=True, smashers=[hammer])
         flyingkey = EscapeRoomObject("flyingkey", visible=True, flying=True, hittable=False, smashers=[hammer],
                                      interesting=True, location="ceiling")
 
         # --------------------------------------------------------------------tsts
         room2 = EscapeRoomObject("room2", visible=True)
-        axe = EscapeRoomObject("axe", visible=True, gettable=False, standable = False)
-        cage = EscapeRoomObject("cage", visible=True, gettable=False, locked=True, open=False,standable = True)
-        player2 = EscapeRoomObject("player2", visible=True, alive=True, hittable = True, smashers=[axe])
-        lock = EscapeRoomObject("lock", visible=True, gettable=False, hittable=True, smashers=[axe], locked=True, standable = False)
-        beast = EscapeRoomObject("beast", visible=True, gettable=False, hittable=False, locked=True, smashers=[axe], standable = False, alive = True)
-        gyroscope = EscapeRoomObject("gyroscope", visible=True, gettable=False, hittable=True, smashers=[axe], hitted=False, standable = False)
+        axe = EscapeRoomObject("axe", visible=True, gettable=False, standable=False)
+        cage = EscapeRoomObject("cage", visible=True, gettable=False, locked=True, open=False, standable=True)
+        player2 = EscapeRoomObject("player2", visible=True, alive=True, hittable=True, smashers=[axe])
+        lock = EscapeRoomObject("lock", visible=True, gettable=False, hittable=True, smashers=[axe], locked=True,
+                                standable=False)
+        beast = EscapeRoomObject("beast", visible=True, gettable=False, hittable=False, locked=True, smashers=[axe],
+                                 standable=False, alive=True)
+        gyroscope = EscapeRoomObject("gyroscope", visible=True, gettable=False, hittable=True, smashers=[axe],
+                                     hitted=False, standable=False)
 
-        #---------------------------------------------------------------------------haolin
+        # ---------------------------------------------------------------------------haolin
         room3 = EscapeRoomObject("room3", visible=True)
-        gun=EscapeRoomObject("gun",visible=True,gettable=True,hittable=False,locked=False,standable=False)
-        bullet=EscapeRoomObject("bullet",visible=False,gettable=False,hittable=False,locked=False,standable=False)
-        saw=EscapeRoomObject("saw",visible=True,gettable=True,hittable=False,locked=False,standable=False)
-        steelchain=EscapeRoomObject("steelchain",visible=True,gettable=False,hittable=True, smashers=[saw], broken=False)
-        player3 = EscapeRoomObject("player3", visible=True, alive=True, hittable=True, smashers=[gun],bleeding=False)
-
-
-
+        gun = EscapeRoomObject("gun", visible=True, gettable=True, hittable=False, locked=False, standable=False)
+        bullet = EscapeRoomObject("bullet", visible=False, gettable=False, hittable=False, locked=False,
+                                  standable=False)
+        saw = EscapeRoomObject("saw", visible=True, gettable=True, hittable=False, locked=False, standable=False)
+        steelchain = EscapeRoomObject("steelchain", visible=True, gettable=False, hittable=True, smashers=[saw],
+                                      broken=False)
+        player3 = EscapeRoomObject("player3", visible=True, alive=True, hittable=True, smashers=[gun, saw],
+                                   bleeding=False)
 
         # setup containers
         player["container"] = {}
         chest["container"] = create_container_contents(hammer)
         room["container"] = create_container_contents(player, door, clock, mirror, hairpin, flyingkey, chest)
-        room2["container"] = create_container_contents(player2, door, clock, mirror, cage, lock, beast, axe, gyroscope,hairpin)
-        room3["container"] = create_container_contents(player3,door,gun,saw,steelchain,gyroscope)
+        room2["container"] = create_container_contents(player2, door, clock, mirror, cage, lock, beast, axe, gyroscope,
+                                                       hairpin)
+        room3["container"] = create_container_contents(player3, door, gun, saw, steelchain, gyroscope)
         beast["container"] = create_container_contents(key)
 
-        #-------------------------------------------------------------haolin
+        # -------------------------------------------------------------haolin
         gun["container"] = create_container_contents(bullet)
 
         # set initial descriptions (functions)
@@ -508,19 +553,17 @@ class EscapeRoomGame:
         beast["description"] = create_beast_description(beast)
         lock["description"] = create_lock_description(lock)
 
-        #------------------------------------------------------------haolin
-        player3["container"]={}
+        # ------------------------------------------------------------haolin
+        player3["container"] = {}
         gun["description"] = create_gun_description(gun)
         saw["description"] = create_saw_description(saw)
         steelchain["description"] = create_steelchain_description(steelchain)
         bullet["description"] = create_bullet_description(bullet)
 
-
         # the room's description depends on other objects. so do it last
         room["description"] = create_room_description(room)
         room2["description"] = create_room2_description(room2)
         room3["description"] = create_room3_description(room3)
-
 
         mirror.triggers.append(lambda obj, cmd, *args: (cmd == "look") and hairpin.__setitem__("visible", True))
         mirror.triggers.append(lambda obj, cmd, *args: (cmd == "look") and mirror.__setitem__("description",
@@ -529,19 +572,30 @@ class EscapeRoomGame:
         door.triggers.append(lambda obj, cmd, *args: (cmd == "unlock") and door.__setitem__("description",
                                                                                             create_door_description(
                                                                                                 door)))
-        door.triggers.append(lambda obj, cmd, *args: (cmd == "open") and room["container"].__delitem__(player.name))
+        door.triggers.append(
+            lambda obj, cmd, *args: (cmd == "open") and player_open_trigger(door, roomswitch, self.output))
         room.triggers.append(lambda obj, cmd, *args: (cmd == "_post_command_") and advance_time(room, clock))
-        flyingkey.triggers.append((lambda obj, cmd, *args: (cmd == "hit" and args[0] in obj["smashers"]) and flyingkey_hit_trigger(room, flyingkey, key, self.output)))
+        flyingkey.triggers.append((lambda obj, cmd, *args: (cmd == "hit" and args[0] in obj[
+            "smashers"]) and flyingkey_hit_trigger(room, flyingkey, key, self.output)))
         # TODO, the chest needs some triggers. This is for a later exercise
         # --------------------------------------tsts
         beast.triggers.append(lambda obj, cmd, *args: (cmd == "smashcage") and beast.__setitem__("locked", False))
+        beast.triggers.append(lambda obj, cmd, *args: (cmd == "smashcage") and beast.__setitem__("hittable", True))
         lock.triggers.append(lambda obj, cmd, *args: (cmd == "smashlock") and lock.__setitem__("locked", False))
-        lock.triggers.append((lambda obj, cmd, *args: (cmd == "hitlock" and args[0] in obj["smashers"]) and lock_hit_trigger(lock, beast, self.output)))
-        beast.triggers.append((lambda obj, cmd, *args: (cmd == "hitbeast" and args[0] in obj["smashers"]) and beast_hit_trigger(beast, key, self.output)))
-        player2.triggers.append((lambda obj, cmd, *args: (cmd == "hitmyself" and args[0] in obj["smashers"]) and player_hit_trigger(player2, self.output)))
+        lock.triggers.append((lambda obj, cmd, *args: (cmd == "hitlock" and args[0] in obj[
+            "smashers"]) and lock_hit_trigger(lock, beast, self.output)))
+        beast.triggers.append((lambda obj, cmd, *args: (cmd == "hitbeast" and args[0] in obj[
+            "smashers"]) and beast_hit_trigger(beast, key, self.output)))
+        player2.triggers.append((lambda obj, cmd, *args: (cmd == "hitmyself" and args[0] in obj[
+            "smashers"]) and player_hit_trigger(player2, roomswitch, self.output)))
+        player3.triggers.append((lambda obj, cmd, *args: (cmd == "hitmyself" and args[0] in obj[
+            "smashers"]) and player_hit_trigger(player3, roomswitch, self.output)))
+        player.triggers.append((lambda obj, cmd, *args: (cmd == "hitmyself" and args[0] in obj[
+            "smashers"]) and player_hit_trigger(player, roomswitch, self.output)))
 
-        #----------------------------------------haolin
-        steelchain.triggers.append((lambda obj, cmd, *args: (cmd == "hitsteelchain" and args[0] in obj["smashers"]) and steelchain_hit_trigger(player3, steelchain, self.output)))
+        # ----------------------------------------haolin
+        steelchain.triggers.append((lambda obj, cmd, *args: (cmd == "hitsteelchain" and args[0] in obj[
+            "smashers"]) and steelchain_hit_trigger(player3, steelchain, self.output)))
 
         if roomswitch == 1:
             self.room, self.player = room, player
@@ -552,9 +606,10 @@ class EscapeRoomGame:
             self.command_handler = self.command_handler_class(room2, player2, self.output)
             self.agents.append(self.beast_agent(beast, lock))
         if roomswitch == 3:
-            self.room,self.player =room3,player3
+            self.room, self.player = room3, player3
             self.command_handler = self.command_handler_class(room3, player3, self.output)
-            #self.agents.append(self.flyingkey_agent(flyingkey))
+            self.agents.append(self.blood_agent(player3, steelchain))
+
         self.status = "created"
 
     async def flyingkey_agent(self, flyingkey):
@@ -578,39 +633,44 @@ class EscapeRoomGame:
     # -----------------------------------------tsts
     async def beast_agent(self, beast, lock):
         await asyncio.sleep(8)  # sleep before starting the while loop
-        flag = 10
+        flag = 50
         while self.status == "playing" and beast["locked"]:
             self.output("The beast is destroying the lock which seems to break out soon. {} seconds left".format(flag))
-            flag = flag - 5
+            flag = flag - 2
             if flag == 0:
                 beast.do_trigger("smashcage")
                 lock.do_trigger("smashlock")
-                self.output("The beast breaks out, you are under attack!!!") 
+                self.output("The beast breaks out, you are under attack!!!")
                 object = self.player["container"].get("axe", None)
                 if object:
                     self.output("You are defending the beast with axe, try to hit it.")
                 else:
                     self.output("You do not have weapon. You become its dinner.")
                     await asyncio.sleep(3)
-                    self.output("However, you find yourself awake suddenly. Seems like you come back to the first room!!")
+                    self.output(
+                        "However, you find yourself awake suddenly. Seems like you come back to the first room!!")
                     self.status = "dead"
                     asyncio.ensure_future(gameswitch(switch=1))
             await asyncio.sleep(5)
 
     # -----------------------------------------haolin
-    async def blood_agent(self, player):
-        await asyncio.sleep(8)  # sleep before starting the while loop
-        flag = 100
-        while self.status == "playing" and player["bleeding"]:
-            self.output("You are now bleeding. After {} seconds, you will die.".format(flag))
-            flag = flag - 5
-            if flag == 0:
-                self.output("You are dead!!") 
-                await asyncio.sleep(3)
-                self.output("However, you find yourself awake suddenly. Seems like you come back to the second room!!")
-                self.status = "dead"
-                asyncio.ensure_future(gameswitch(switch=2))
-            await asyncio.sleep(5)
+    async def blood_agent(self, player, steelchain):
+        while self.status == "playing":
+            await asyncio.sleep(3)
+            if steelchain["broken"]:
+                await asyncio.sleep(3)  # sleep before starting the while loop
+                flag = 100
+                while self.status == "playing" and player["bleeding"]:
+                    self.output("You are now bleeding. After {} seconds, you will die.".format(flag))
+                    flag = flag - 5
+                    if flag == 0:
+                        self.output("You are dead!!")
+                        await asyncio.sleep(3)
+                        self.output(
+                            "However, you find yourself awake suddenly. Seems like you come back to the second room!!")
+                        self.status = "dead"
+                        asyncio.ensure_future(gameswitch(switch=2))
+                    await asyncio.sleep(10)
 
     def start(self):
         self.status = "playing"
@@ -628,9 +688,6 @@ class EscapeRoomGame:
         else:
             self.command_handler.command(command_string)
             if not self.player["alive"]:
-                self.output("You died. Game over!")
-                self.status = "dead"
-            elif self.player.name not in self.room["container"]:
                 self.status = "escaped"
                 self.output("VICTORY! You escaped!")
 
@@ -644,37 +701,93 @@ def game_next_input(game):
         flush_output(">> ", end='')
 
 
+Transport_method = "1"
+game_server = EscapeRoomGame()
+
+
 def flush_output(*args, **kargs):
     print(*args, **kargs)
     sys.stdout.flush()
 
 
+class EchoServerClientProtocol(asyncio.Protocol):
+    def __init__(self):
+        self.loop = asyncio.get_event_loop()
+        self.deserializer = PacketType.Deserializer()
+
+    def connection_made(self, transport):
+        self.transport = transport
+
+    def data_received(self, data):
+        self.deserializer.update(data)
+        for serverPacket in self.deserializer.nextPackets():
+            if isinstance(serverPacket, GameInitPacket):
+                username = process_game_init(serverPacket)
+                print(username)
+                game_packet = create_game_require_pay_packet('qazwsx.edc,rfvmtgbnyhujikolp', "tfeng7_account", 1)
+                self.transport.write(game_packet.__serialize__())
+
+            if isinstance(serverPacket, GameCommandPacket):
+                print(serverPacket.command)
+                game_server.command(serverPacket.command)
+
+            if isinstance(serverPacket, GamePayPacket):
+                receipt, receipt_sig = process_game_pay_packet(serverPacket)
+                print(receipt)
+                print(receipt_sig)
+                asyncio.ensure_future(gameswitch(switch=1))
+
+                def send_message(result):
+                    # self.transport = Transport_method
+                    print(result)
+                    time.sleep(0.5)
+                    res_temp = create_game_response(result, game_server.status)
+                    self.transport.write(res_temp.__serialize__())
+
+                #run_start(send_message)
+                global Transport_method
+                Transport_method = send_message
+
+
 async def gameswitch(switch):
-    loop = asyncio.get_event_loop()
-    game = EscapeRoomGame(output=flush_output)
+    game = EscapeRoomGame(output=Transport_method)
+    global game_server
+    game_server = game
     if switch == 1:
         game.create_game(roomswitch=switch)
         game.start()
-        pygame.mixer.music.play()
-        flush_output(">> ", end='')
-        loop.add_reader(sys.stdin, game_next_input, game)
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
+
     if switch == 2:
         game.create_game(roomswitch=switch)
         game.start()
-        flush_output(">> ", end='')
-        loop.add_reader(sys.stdin, game_next_input, game)
         await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
+
     if switch == 3:
         game.create_game(roomswitch=switch)
         game.start()
-        flush_output(">> ", end='')
-        loop.add_reader(sys.stdin, game_next_input, game)
-        #await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
+        await asyncio.wait([asyncio.ensure_future(a) for a in game.agents])
 
 
 
 if __name__ == "__main__":
-    #run_start()
-    asyncio.ensure_future(gameswitch(switch=3))
-    asyncio.get_event_loop().run_forever()
+    loop = asyncio.get_event_loop()
+    # Each client connection will create a new protocol instance
+    coro = playground.create_server(EchoServerClientProtocol, 'localhost', 8666)
+    server = loop.run_until_complete(coro)
+
+    loop.set_debug(enabled=True)
+    from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
+
+    EnablePresetLogging(PRESET_DEBUG)
+    # Serve requests until Ctrl+C is pressed
+    print('Serving on {}'.format(server.sockets[0].getsockname()))
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+
+    # Close the server
+    server.close()
+    loop.run_until_complete(server.wait_closed())
+    loop.close()

@@ -45,7 +45,7 @@ def ascii_art_clear():
         sys.stdout.write(ERASE_LINE)
 
 
-def ascii_art_print(ascii_art, level, rev=False):
+def ascii_art_print(ascii_art, level, output, rev=False):
     tmp_ascii_art = list(ascii_art)
     if level is not 15:
         for i in range(len(tmp_ascii_art)):
@@ -57,14 +57,14 @@ def ascii_art_print(ascii_art, level, rev=False):
                     tmp_ascii_art[i] = '.'
                 else:
                     tmp_ascii_art[i] = '\''
-    print(''.join(tmp_ascii_art))
+    output(''.join(tmp_ascii_art))
 
 
-def run_start():
+def run_start(output):
     time_slice = 0.08
 
     for i in range(16):
-        ascii_art_print(iron_head_ascii, i)
+        ascii_art_print(iron_head_ascii, i, output=output)
         time.sleep(time_slice)
         if i is not 15:
             ascii_art_clear()
@@ -73,22 +73,22 @@ def run_start():
 
     for i in reversed(range(16)):
         ascii_art_clear()
-        ascii_art_print(iron_head_ascii, i)
+        ascii_art_print(iron_head_ascii, i,output=output)
         time.sleep(time_slice)
 
     for i in range(16):
         ascii_art_clear()
-        ascii_art_print(a_group_four_game_ascii, i)
+        ascii_art_print(a_group_four_game_ascii, i,output=output)
         time.sleep(time_slice)
 
     time.sleep(2)
 
     for i in reversed(range(16)):
         ascii_art_clear()
-        ascii_art_print(a_group_four_game_ascii, i)
+        ascii_art_print(a_group_four_game_ascii, i,output=output)
         time.sleep(time_slice)
 
     for i in range(16):
         ascii_art_clear()
-        ascii_art_print(escape_room_ascii, i)
+        ascii_art_print(escape_room_ascii, i, output=output)
         time.sleep(time_slice)
