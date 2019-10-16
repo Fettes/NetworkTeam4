@@ -11,8 +11,6 @@ class PoopPacketType(PacketType):
     DEFINITION_VERSION ="1.0"
 
 
-
-
 class HandshakePacket(PoopPacketType):
     DEFINITION_IDENTIFIER = "poop.hankshakepacket"
     DEFINITION_VERSION = "1.0"
@@ -56,6 +54,8 @@ class PassthroughProtocol(StackingProtocol):
         else:
             self.buffer = PacketType.Deserializer()
             self.buffer.update(buffer)
+        # self.buffer = PoopPacketType.Deserializer()
+        # self.buffer.update(buffer)
 
         for packet in self.buffer.nextPackets():
             print(packet)
