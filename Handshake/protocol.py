@@ -6,6 +6,9 @@ from playground.network.packet.fieldtypes.attributes import Optional
 
 logger = logging.getLogger("playground.__connector__." + __name__)
 
+class PoopPacketType(PacketType):
+    DEFINITION_IDENTIFIER= "handshakepacket"
+    DEFINITION_VERSION ="1.0"
 
 class PoopPacketType(PacketType):
     DEFINITION_IDENTIFIER = "pooppacket"
