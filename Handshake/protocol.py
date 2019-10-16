@@ -69,7 +69,7 @@ class PassthroughProtocol(StackingProtocol):
                     new_packet.status = 1
                     self.transport.write(new_packet.__serialize__())
                 elif packet.ACK == 1:
-                    logger.debug("jinlaiguo222222222222")
+                    logger.debug("jinlaiguo3333333333333")
                     # Upon receiving the SUCCESS packet, the server checks if ACK is 1. If success, the server
                     # acknowledges this connection. Else, the server sends back a packet to the client with status
                     # ERROR.
@@ -86,6 +86,7 @@ class PassthroughProtocol(StackingProtocol):
                 # the client sends back to server a packet with ACK set to 1 and status SUCCESS and acknowledge this
                 # connection with server. Else, the client sends back to server a packet with status set to ERROR.
                 if packet.SYN == self.SYN + 1:
+                    logger.debug("jinlaiguo222222222222")
                     new_packet = HandshakePacket()
                     new_packet.SYN = packet.SYN + 1
                     new_packet.ACK = 1
