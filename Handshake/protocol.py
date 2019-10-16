@@ -54,12 +54,12 @@ class PassthroughProtocol(StackingProtocol):
             self.buffer = HandshakePacket.Deserializer()
             self.buffer.update(buffer)
         else:
-            self.buffer = PacketType.Deserializer()
+            self.buffer = PoopPacketType.Deserializer()
             self.buffer.update(buffer)
 
         for packet in self.buffer.nextPackets():
             print(packet)
-            if self._mode == "server" and isinstance(packet, HandshakePacket):
+            if self._mode == "server":
                 if packet.status == 0:
                     # Upon receiving packet, the server sends back a packet with SYN+1, ACK set to 0 and status SUCCESS.
                     new_packet = HandshakePacket()
@@ -79,7 +79,7 @@ class PassthroughProtocol(StackingProtocol):
                     new_packet.status = 2
                     self.transport.write(new_packet.__serialize__())
 
-            elif self._mode == "client" and isinstance(packet, HandshakePacket):
+            elif self._mode == "client":
                 # Upon receiving the SUCCESS packet, the client checks if new SYN is old SYN + 1. If it is correct,
                 # the client sends back to server a packet with ACK set to 1 and status SUCCESS and acknowledge this
                 # connection with server. Else, the client sends back to server a packet with status set to ERROR.
