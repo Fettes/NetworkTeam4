@@ -4,7 +4,7 @@ from playground.network.packet.fieldtypes.attributes import Optional
 
 
 class HandshakePacket(PacketType):
-    DEFINITION_IDENTIFIER = "handshakepacket"
+    DEFINITION_IDENTIFIER = "poop.handshakepacket"
     DEFINITION_VERSION = "1.0"
 
     NOT_STARTED = 0
