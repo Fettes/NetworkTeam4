@@ -7,8 +7,13 @@ from playground.network.packet.fieldtypes.attributes import Optional
 logger = logging.getLogger("playground.__connector__." + __name__)
 
 
-class HandshakePacket(PacketType):
-    DEFINITION_IDENTIFIER = "handshakepacket"
+class PoopPacketType(PacketType):
+    DEFINITION_IDENTIFIER = "pooppacket"
+    DEFINITION_VERSION = "1.0"
+
+
+class HandshakePacket(PoopPacketType):
+    DEFINITION_IDENTIFIER = "poop.handshakepacket"
     DEFINITION_VERSION = "1.0"
     NOT_STARTED = 0
     SUCCESS = 1
@@ -44,12 +49,14 @@ class PassthroughProtocol(StackingProtocol):
     def data_received(self, buffer):
         logger.debug("{} passthrough received a buffer of size {}".format(self._mode, len(buffer)))
         # after handshake successfully, the deserializer should be changed
-        if self.flag == 0:
-            self.buffer = HandshakePacket.Deserializer()
-            self.buffer.update(buffer)
-        else:
-            self.buffer = PacketType.Deserializer()
-            self.buffer.update(buffer)
+        # if self.flag == 0:
+        #     self.buffer = HandshakePacket.Deserializer()
+        #     self.buffer.update(buffer)
+        # else:
+        #     self.buffer = PacketType.Deserializer()
+        #     self.buffer.update(buffer)
+        self.buffer = PoopPacketType.Deserializer()
+        self.buffer.update(buffer)
 
         for packet in self.buffer.nextPackets():
             print(packet)
