@@ -14,7 +14,7 @@ class PoopPacketType(PacketType):
 
 
 class HandshakePacket(PoopPacketType):
-    DEFINITION_IDENTIFIER = "poop.hankshakepacket"
+    DEFINITION_IDENTIFIER = "poop.handshakepacket"
     DEFINITION_VERSION = "1.0"
     NOT_STARTED = 0
     SUCCESS = 1
