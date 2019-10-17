@@ -61,15 +61,20 @@ class PassthroughProtocol(StackingProtocol):
             print(packet)
             if self._mode == "server" and isinstance(packet, HandshakePacket):
                 if packet.status == 0:
-                    logger.debug("jinlaiguo11111111111")
-                    # Upon receiving packet, the server sends back a packet with SYN+1, ACK set to 0 and status SUCCESS.
-                    new_packet = HandshakePacket()
-                    new_packet.SYN = packet.SYN + 1
-                    new_packet.ACK = 0
-                    new_packet.status = 1
-                    self.transport.write(new_packet.__serialize__())
+                    if packet.SYN:
+                        logger.debug("jinlaiguo11111111111")
+                        # Upon receiving packet, the server sends back a packet with SYN+1, ACK set to 0 and status SUCCESS.
+                        new_packet = HandshakePacket()
+                        new_packet.SYN = packet.SYN + 1
+                        new_packet.ACK = 0
+                        new_packet.status = 1
+                        self.transport.write(new_packet.__serialize__())
+                    else:
+                        new_packet = HandshakePacket()
+                        new_packet.status = 2
+                        self.transport.write(new_packet.__serialize__())
                 elif packet.ACK == 1:
-                    logger.debug("jinlaiguo3333333333333")
+                    logger.debug("jinlaiguo2222222222222222")
                     # Upon receiving the SUCCESS packet, the server checks if ACK is 1. If success, the server
                     # acknowledges this connection. Else, the server sends back a packet to the client with status
                     # ERROR.
@@ -86,7 +91,7 @@ class PassthroughProtocol(StackingProtocol):
                 # the client sends back to server a packet with ACK set to 1 and status SUCCESS and acknowledge this
                 # connection with server. Else, the client sends back to server a packet with status set to ERROR.
                 if packet.SYN == self.SYN + 1:
-                    logger.debug("jinlaiguo222222222222")
+                    logger.debug("jinlaiguo33333333333333")
                     new_packet = HandshakePacket()
                     new_packet.SYN = packet.SYN + 1
                     new_packet.ACK = 1
