@@ -241,7 +241,7 @@ if __name__ == "__main__":
     import sys
     from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
 
-    EnablePresetLogging(PRESET_DEBUG)
+   # EnablePresetLogging(PRESET_DEBUG)
 
     server_addr, team_number, test_type, mode = sys.argv[1:]
 
