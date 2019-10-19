@@ -20,7 +20,7 @@ class DummyProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc):
         self.disconnected.set_result(True)
-        if not self.connected.finished():
+        if not self.connected.done():
             self.connected.set_exception(Exception("Connection_made never called"))
         self.transport = None
         self.state = "connection_lost"
@@ -96,7 +96,7 @@ class Lab1TestProtocol_Server(asyncio.Protocol):
 
 class Lab1AutogradeClient(asyncio.Protocol):
 
-    def __init__(self, server_addr, test_type, mode):
+    def __init__(self, server_addr, team_number, test_type, mode):
         self.test_type = test_type
         self.mode = mode
         self.server_addr = server_addr
@@ -106,6 +106,7 @@ class Lab1AutogradeClient(asyncio.Protocol):
         self.server_test_protocol = None
         self.server = None
         self.test_id = None
+        self.team_number = team_number
 
     def connection_made(self, transport):
         if self.mode != "submit":
@@ -117,7 +118,7 @@ class Lab1AutogradeClient(asyncio.Protocol):
         else:
             transport.write(
                 autograder_packets.AutogradeStartTest(
-                    team=0,
+                    team=team_number,
                     test_type=self.test_type,
                     port=self.my_server_port).__serialize__())
             self.state = "test_start"
@@ -238,15 +239,15 @@ class Lab1AutogradeClient(asyncio.Protocol):
 
 if __name__ == "__main__":
     import sys
-    from playground.common.logging import EnablePresetLogging, PRESET_VERBOSE
+    from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
 
-    EnablePresetLogging(PRESET_VERBOSE)
+   # EnablePresetLogging(PRESET_DEBUG)
 
-    server_addr, test_type, mode = sys.argv[1:]
+    server_addr, team_number, test_type, mode = sys.argv[1:]
 
     loop = asyncio.get_event_loop()
-    coro = playground.create_connection(lambda: Lab1AutogradeClient(server_addr, test_type, mode), host='localhost',
-                                        port=19101)
+    coro = playground.create_connection(lambda: Lab1AutogradeClient(server_addr, team_number, test_type, mode),
+                                        host=server_addr, port=19101)
 
     transport, protocol = loop.run_until_complete(coro)
     print("Connected on", transport.get_extra_info("peername"))

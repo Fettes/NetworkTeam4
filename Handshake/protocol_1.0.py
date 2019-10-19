@@ -7,10 +7,8 @@ from playground.network.packet.fieldtypes.attributes import Optional
 logger = logging.getLogger("playground.__connector__." + __name__)
 
 class PoopPacketType(PacketType):
-    DEFINITION_IDENTIFIER= "handshakepacket"
-    DEFINITION_VERSION ="1.0"
-
-
+    DEFINITION_IDENTIFIER = "pooppacket"
+    DEFINITION_VERSION = "1.0"
 
 
 class HandshakePacket(PoopPacketType):
@@ -50,23 +48,31 @@ class PassthroughProtocol(StackingProtocol):
     def data_received(self, buffer):
         logger.debug("{} passthrough received a buffer of size {}".format(self._mode, len(buffer)))
         # after handshake successfully, the deserializer should be changed
-        if self.flag == 0:
-            self.buffer = HandshakePacket.Deserializer()
-            self.buffer.update(buffer)
-        else:
-            self.buffer = PoopPacketType.Deserializer()
-            self.buffer.update(buffer)
+        # if self.flag == 0:
+        #     self.buffer = HandshakePacket.Deserializer()
+        #     self.buffer.update(buffer)
+        # else:
+        #     self.buffer = PacketType.Deserializer()
+        #     self.buffer.update(buffer)
+        self.buffer = PoopPacketType.Deserializer()
+        self.buffer.update(buffer)
 
         for packet in self.buffer.nextPackets():
             print(packet)
             if self._mode == "server":
                 if packet.status == 0:
-                    # Upon receiving packet, the server sends back a packet with SYN+1, ACK set to 0 and status SUCCESS.
-                    new_packet = HandshakePacket()
-                    new_packet.SYN = packet.SYN + 1
-                    new_packet.ACK = 0
-                    new_packet.status = 1
-                    self.transport.write(new_packet.__serialize__())
+                    if packet.SYN:
+                        # Upon receiving packet, the server sends back a packet with SYN+1, ACK set to 0 and status SUCCESS.
+                        new_packet = HandshakePacket()
+                        new_packet.SYN = packet.SYN + 1
+                        new_packet.ACK = 0
+                        new_packet.status = 1
+                        self.transport.write(new_packet.__serialize__())
+                    else:
+                        new_packet = HandshakePacket()
+                        new_packet.status = 2
+                        self.transport.write(new_packet.__serialize__())
+
                 elif packet.ACK == 1:
                     # Upon receiving the SUCCESS packet, the server checks if ACK is 1. If success, the server
                     # acknowledges this connection. Else, the server sends back a packet to the client with status
