@@ -71,7 +71,6 @@ class PassthroughProtocol(StackingProtocol):
         for packet in self.buffer.nextPackets():
             print(packet)
             if self._mode == "server":
-                print("11111111111111111111")
                 if packet.status == 0:
                     if packet.SYN:
                         # Upon receiving packet, the server sends back a packet with random number from 0 to 2^32, ACK set to (SYN+1)%(2^32)and status SUCCESS.
@@ -88,7 +87,6 @@ class PassthroughProtocol(StackingProtocol):
                         self.transport.write(new_packet.__serialize__())
 
                 elif packet.ACK == (self.ACK+1)%(2**32):
-                    print("4444444444444444444444444444444444444")
                     # Upon receiving the SUCCESS packet, the server checks if ACK is old ACK plus 1. If success, the server
                     # acknowledges this connection. Else, the server sends back a packet to the client with status
                     # ERROR.
@@ -101,7 +99,6 @@ class PassthroughProtocol(StackingProtocol):
                     self.transport.write(new_packet.__serialize__())
 
             elif self._mode == "client":
-                print("2222222222222222222222222222222")
                 # Upon receiving the SUCCESS packet, the client checks if new ACK is old SYN + 1. If it is correct,
                 # the client sends back to server a packet with ACK set to (ACK+1)%(2^32)  and status SUCCESS and acknowledge this
                 # connection with server. Else, the client sends back to server a packet with status set to ERROR.
@@ -115,7 +112,6 @@ class PassthroughProtocol(StackingProtocol):
                     higher_transport = StackingTransport(self.transport)
                     self.higherProtocol().connection_made(higher_transport)
                 else:
-                    print("333333333333333333333333333")
                     new_packet = HandshakePacket()
                     new_packet.status = 2
                     self.transport.write(new_packet.__serialize__())
