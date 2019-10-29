@@ -45,6 +45,8 @@ class PassthroughProtocol(StackingProtocol):
         logger.debug("{} passthrough connection made. Calling connection made higher.".format(self._mode))
         self.transport = transport
         packet = HandshakePacket()
+
+
         # At initialization, the client will set its SYN to be any random value between 0 and 2^32, server will set
         # its SYN anything between 0 and 2^32 and its ACK any random value between 0 and 2^32
         if self._mode == "client":
@@ -68,6 +70,7 @@ class PassthroughProtocol(StackingProtocol):
         self.buffer = PoopPacketType.Deserializer()
         self.buffer.update(buffer)
 
+
         for packet in self.buffer.nextPackets():
             print(packet)
             if self._mode == "server":
@@ -75,7 +78,7 @@ class PassthroughProtocol(StackingProtocol):
                     if packet.SYN:
                         # Upon receiving packet, the server sends back a packet with random number from 0 to 2^32, ACK set to (SYN+1)%(2^32)and status SUCCESS.
                         new_packet = HandshakePacket()
-                        self.ACK=random.randint(0,2**32)
+                        self.ACK = random.randint(0,2**32)
                         new_packet.SYN = self.ACK
                         # get a random ACK and assign the value to SYN
                         new_packet.ACK = (packet.SYN+1)%(2**32)
@@ -116,11 +119,13 @@ class PassthroughProtocol(StackingProtocol):
                     new_packet.status = 2
                     self.transport.write(new_packet.__serialize__())
             else:
+
                 self.higherProtocol().data_received(buffer)
 
     def connection_lost(self, exc):
         logger.debug("{} passthrough connection lost. Shutting down higher layer.".format(self._mode))
         self.higherProtocol().connection_lost(exc)
+
 
 # from playground.network.common import StackingProtocolFactory
 #
