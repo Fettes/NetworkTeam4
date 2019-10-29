@@ -81,11 +81,14 @@ class POOPProtocol(StackingProtocol):
         self.handshake_last_time = 0  # initiate the time of handshake
         self.transport = None  # initiate the current layer transport first
         self.higher_transport = None  # initiate the higher layer transport first
-        self.next_seq = 0  # initiate the sequence number of next packet
+        self.next_seq_send = 0  # initiate the sequence number of next packet
         self.next_expected_ack = 0  # initiate the expected ack number of next packet
-        self.recv_next = 0
+        self.next_seq_recv = 0
         self.send_window = []  # the send window
-        self.send_wind_size = 10  # define the window size of send window
+        self.recv_window = []  # the recv window
+        self.send_window_size = 10  # define the window size of send window
+        self.recv_window_size = 10  # define the window size of recv window
+
         self.send_buffer = []  # the current data buffer
         self.deserializer = PoopPacketType.Deserializer()
 
@@ -155,14 +158,12 @@ class POOPProtocol(StackingProtocol):
                 # ERROR.
                 # All agents set the sequence number on the first packet they send to be the random value
                 # they generated during the course of the Handshake Protocol.
-                self.next_seq = self.SSYN
+                self.next_seq_send = self.SSYN
                 self.last_recv_time = time.time()
                 self.next_expected_ack = self.SSYN
 
                 self.higherProtocol().connection_made(self.higher_transport)
                 logger.debug("Server Poop handshake success!")
-
-
 
             else:
                 new_packet = StartupPacket()
@@ -183,7 +184,7 @@ class POOPProtocol(StackingProtocol):
                 self.transport.write(new_packet.__serialize__())
                 # All agents set the sequence number on the first packet they send to be the random value
                 # they generated during the course of the Handshake Protocol.
-                self.next_seq = self.CSYN
+                self.next_seq_send = self.CSYN
                 self.last_recv_time = time.time()
                 self.next_expected_ack = self.CSYN
 
@@ -221,8 +222,11 @@ class POOPProtocol(StackingProtocol):
         # If ACK is set, handle ACK
         if packet.ACK:
             # Check hash, drop if invalid
-            tmp_packet = DataPacket(ACK=packet.ack, hash=0)
+            tmp_packet = DataPacket()
+            tmp_packet.ACK = packet.ack
+            tmp_packet.hash = 0
             if binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff != packet.hash:
+                logger.debug("The hash doesn't match. Dropped!")
                 return
             # If ACK matches sequence of a packet in send queue, take off of send queue, and update send queue
             self.send_window[:] = [send_pkt for send_pkt in self.send_window if send_pkt.seq != packet.ack]
@@ -233,6 +237,45 @@ class POOPProtocol(StackingProtocol):
                 self.next_expected_ack = packet.ACK + 1
             self.send_packets_inqueue()
             return
+        # if there is no ack, which means the packets are data packets just received
+        elif packet.seq <= self.next_seq_recv + self.recv_window_size:
+            tmp_packet = DataPacket()
+            tmp_packet.seq = packet.seq
+            tmp_packet.data = packet.data
+            tmp_packet.hash = 0
+            if binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff != packet.hash:
+                logger.debug("The hash doesn't match. Dropped!")
+                return
+        else:
+            logger.debug("The received sequence number doesn't in the range. Dropped!")
+            return
+        # continue the following when hash matches, send the sequence number of the already acquired packets
+        new_ack_packet = DataPacket()
+        new_ack_packet.ACK = packet.seq
+        new_ack_packet.hash = 0
+        new_ack_packet.hash = binascii.crc32(new_ack_packet.__serialize__()) & 0xffffffff
+        self.transport.write(new_ack_packet.__serialize__())
+
+        # add the coming packet into the window and sort
+        self.recv_window.append(packet)
+        self.recv_window.sort(key=lambda packet_: packet_.seq)
+
+        # send the received packets to the higher application layer
+        while self.recv_window:
+            if self.recv_window[0].seq == self.next_seq_recv:
+                self.higherProtocol().data_received(self.recv_window.pop(0).data)
+                while self.recv_window:
+                    if self.recv_window[0].seq == self.next_seq_recv:
+                        self.recv_window.pop(0)
+                    else:
+                        break
+                # when the received sequence number is outer bound, reset to 0
+                if self.next_seq_recv == 2 ** 32:
+                    self.next_seq_recv = 0
+                else:
+                    self.next_seq_recv = self.next_seq_recv + 1
+            else:
+                break
 
 
 
@@ -241,10 +284,10 @@ class POOPProtocol(StackingProtocol):
         self.send_packets_inqueue()
 
     def send_packets_inqueue(self):
-        while self.send_buffer and len(self.send_window) <= self.send_wind_size and self.next_seq < self.next_expected_ack + self.send_wind_size:
+        while self.send_buffer and len(self.send_window) <= self.send_window_size and self.next_seq_send < self.next_expected_ack + self.send_window_size:
             if len(self.send_buffer) >= 15000:
                 new_packet = DataPacket()
-                new_packet.seq = self.next_seq
+                new_packet.seq = self.next_seq_send
                 new_packet.data = bytes(self.send_buffer[0:15000])
                 new_packet.hash = 0
                 new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
@@ -252,20 +295,20 @@ class POOPProtocol(StackingProtocol):
                 self.send_buffer = self.send_buffer[15000:]
             else:
                 new_packet = DataPacket()
-                new_packet.seq = self.next_seq
+                new_packet.seq = self.next_seq_send
                 new_packet.data = bytes(self.send_buffer[0:len(self.send_buffer)])
                 new_packet.hash = 0
                 new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
                 # set the send_buffer to be empty again
                 self.send_buffer = []
 
-            if self.recv_next == 2**32:
-                self.recv_next = 0
+            if self.next_seq_recv == 2**32:
+                self.next_seq_recv = 0
 
             else:
-                self.next_seq = self.next_seq + 1
+                self.next_seq_send = self.next_seq_send + 1
 
-            self.send_queue.append(new_packet)
+            self.send_window.append(new_packet)
             self.transport.write(new_packet.__serialize__())
 
 
