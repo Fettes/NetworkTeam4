@@ -117,6 +117,7 @@ class POOPProtocol(StackingProtocol):
         self.transport = transport
         self.higher_transport = PoopTransport(transport)
         self.higher_transport.create_protocol(self)
+        self.loop.create_task(self.resend_check())
 
         # At initialization, the client will set its SYN to be any random value between 0 and 2^32, server will set
         # its SYN anything between 0 and 2^32 and its ACK any random value between 0 and 2^32
@@ -246,19 +247,6 @@ class POOPProtocol(StackingProtocol):
                 self.transport.close()
             await asyncio.sleep(20 - (time.time() - self.last_data_time))
 
-    async def resend_check(self):
-        while True:
-            current_time = time.time()
-            for resend_packet in self.send_window_:
-                if current_time - resend_packet.TIMESTAMP > 2:
-                    packet = DataPacket()
-                    packet.seq = resend_packet.seq
-                    packet.data = resend_packet.data
-                    packet.hash = resend_packet.hash
-                    self.transport.write(packet.__serialize__())
-                    resend_packet.TIMESTAMP = current_time
-            await asyncio.sleep(0.5)
-
     # --------------------------------------------------------------------------------------------------------
     def send(self, data):
         self.send_buffer = self.buffer + data
@@ -296,8 +284,21 @@ class POOPProtocol(StackingProtocol):
             resend_packet.data = new_packet.data
             resend_packet.hash = new_packet.hash
             resend_packet.TIMESTAMP = time.time()
-            self.send_window.append(new_packet)
+            self.send_window.append(resend_packet)
             self.transport.write(new_packet.__serialize__())
+
+    async def resend_check(self):
+        while True:
+            current_time = time.time()
+            for resend_packet in self.send_window_:
+                if current_time - resend_packet.TIMESTAMP > 2:
+                    packet = DataPacket()
+                    packet.seq = resend_packet.seq
+                    packet.data = resend_packet.data
+                    packet.hash = resend_packet.hash
+                    self.transport.write(packet.__serialize__())
+                    resend_packet.TIMESTAMP = current_time
+            await asyncio.sleep(0.5)
 
     def datapacket_recv(self, packet):
         self.last_data_time = time.time()
