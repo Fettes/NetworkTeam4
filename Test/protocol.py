@@ -29,6 +29,12 @@ class DataPacket(PoopPacketType):
     ]
 
 
+class ResendPacket(DataPacket):
+    DEFINITION_IDENTIFIER = "poop.resendpacket"
+    DEFINITION_VERSION = "1.0"
+    TIMESTAMP = 0
+
+
 class HandshakePacket(PoopPacketType):
     DEFINITION_IDENTIFIER = "poop.handshakepacket"
     DEFINITION_VERSION = "1.0"
@@ -62,6 +68,7 @@ class ShutdownPacket(PoopPacketType):
         ("FACK", UINT32({Optional: True}))
     ]
 
+
 # inherit the StackingTransport
 class PoopTransport(StackingTransport):
     def create_protocol(self, protocol):
@@ -81,7 +88,7 @@ class POOPProtocol(StackingProtocol):
         self._mode = mode
         self.loop = asyncio.get_event_loop()  # define an async function to check the time out
         self.status = 0  # initiate the status and use the status to control the protocol procedure
-        self.handshake_flag = 0 # check the handshake flag if it is success or not
+        self.handshake_flag = 0  # check the handshake flag if it is success or not
         self.CSYN = 0
         self.SSYN = 0
         self.shut_SYN = 0
@@ -239,13 +246,27 @@ class POOPProtocol(StackingProtocol):
                 self.transport.close()
             await asyncio.sleep(20 - (time.time() - self.last_data_time))
 
+    async def resend_check(self):
+        while True:
+            current_time = time.time()
+            for resend_packet in self.send_window_:
+                if current_time - resend_packet.TIMESTAMP > 2:
+                    packet = DataPacket()
+                    packet.seq = resend_packet.seq
+                    packet.data = resend_packet.data
+                    packet.hash = resend_packet.hash
+                    self.transport.write(packet.__serialize__())
+                    resend_packet.TIMESTAMP = current_time
+            await asyncio.sleep(0.5)
+
     # --------------------------------------------------------------------------------------------------------
-    def send(self,data):
+    def send(self, data):
         self.send_buffer = self.buffer + data
         self.send_packets_inqueue()
 
     def send_packets_inqueue(self):
-        while self.send_buffer and len(self.send_window) <= self.send_window_size and self.next_seq_send < self.next_expected_ack + self.send_window_size:
+        while self.send_buffer and len(
+                self.send_window) <= self.send_window_size and self.next_seq_send < self.next_expected_ack + self.send_window_size:
             if len(self.send_buffer) >= 15000:
                 new_packet = DataPacket()
                 new_packet.seq = self.next_seq_send
@@ -270,6 +291,11 @@ class POOPProtocol(StackingProtocol):
             else:
                 self.next_seq_send = self.next_seq_send + 1
 
+            resend_packet = ResendPacket()
+            resend_packet.seq = new_packet.seq
+            resend_packet.data = new_packet.data
+            resend_packet.hash = new_packet.hash
+            resend_packet.TIMESTAMP = time.time()
             self.send_window.append(new_packet)
             self.transport.write(new_packet.__serialize__())
 
@@ -371,6 +397,7 @@ class POOPProtocol(StackingProtocol):
             Fack_packet.Fack = packet.FIN
             self.transport.write(Fack_packet.__serialize__())
             self.transport.close()
+
 
 # from playground.network.common import StackingProtocolFactory
 #
