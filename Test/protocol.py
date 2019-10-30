@@ -42,7 +42,6 @@ class HandshakePacket(PoopPacketType):
         ("SYN", UINT32({Optional: True})),
         ("ACK", UINT32({Optional: True})),
         ("error", STRING({Optional: True})),
-        ("last_valid_sequence", UINT32({Optional: True}))
     ]
 
 
@@ -51,10 +50,17 @@ class StartupPacket(HandshakePacket):
     DEFINITION_VERSION = "1.0"
 
 
-class ShutdownPacket(HandshakePacket):
+class ShutdownPacket(PoopPacketType):
     DEFINITION_IDENTIFIER = "poop.shutdownpacket"
     DEFINITION_VERSION = "1.0"
 
+    SUCCESS = 0
+    ERROR = 1
+
+    FIELDS = [
+        ("FIN", UINT32({Optional: True})),
+        ("FACK", UINT32({Optional: True}))
+    ]
 
 # inherit the StackingTransport
 class PoopTransport(StackingTransport):
@@ -75,10 +81,16 @@ class POOPProtocol(StackingProtocol):
         self._mode = mode
         self.loop = asyncio.get_event_loop()  # define an async function to check the time out
         self.status = 0  # initiate the status and use the status to control the protocol procedure
-        self.SYN = 0
+        self.handshake_flag = 0 # check the handshake flag if it is success or not
+        self.CSYN = 0
+        self.SSYN = 0
+        self.shut_SYN = 0
         self.FIN = 0
-        self.last_recv_time = 0  # initiate the time of the last packet received
-        self.handshake_last_time = 0  # initiate the time of handshake
+        self.last_handshake_time = 0  # initiate the time of the last handshake packet received
+        self.last_data_time = 0  # initiate the time of the last data packet received
+        self.shutdown_time = 0
+        self.check_shutdown_count = 0
+        self.handshake_last_time = 0  # initiate the time of handshake, just for debugging
         self.transport = None  # initiate the current layer transport first
         self.higher_transport = None  # initiate the higher layer transport first
         self.next_seq_send = 0  # initiate the sequence number of next packet
@@ -88,14 +100,13 @@ class POOPProtocol(StackingProtocol):
         self.recv_window = []  # the recv window
         self.send_window_size = 10  # define the window size of send window
         self.recv_window_size = 10  # define the window size of recv window
-
         self.send_buffer = []  # the current data buffer
+
         self.deserializer = PoopPacketType.Deserializer()
 
     def connection_made(self, transport):
         logger.debug("{} Poop connection made. Calling connection made higher.".format(self._mode))
-        self.last_recv_time = time.time()  # define the time of last packet received when connection made
-        self.loop.create_task(self.check_connection_timeout())
+        self.last_handshake_time = time.time()  # define the time of last packet received when connection made
         self.transport = transport
         self.higher_transport = PoopTransport(transport)
         self.higher_transport.create_protocol(self)
@@ -124,7 +135,12 @@ class POOPProtocol(StackingProtocol):
             elif packet.DEFINITION_IDENTIFIER == "poop.datapacket":
                 self.datapacket_recv(packet)
             elif packet.DEFINITION_IDENTIFIER == "poop.shutdownpacket":
-                self.shutdown_recv(packet)
+                if self.handshake_flag == 1:
+                    self.shutdown_recv(packet)
+                else:
+                    new_packet = HandshakePacket()
+                    new_packet.status = 2
+                    self.transport.write(new_packet.__serialize__())
 
     def connection_lost(self, exc):
         logger.debug("{} passthrough connection lost. Shutting down higher layer.".format(self._mode))
@@ -132,6 +148,7 @@ class POOPProtocol(StackingProtocol):
 
     # --------------------------------------------------------------------------------------------------------
     def handshake_recv(self, packet):
+        self.last_handshake_time = time.time()
         logger.debug("{} received a handshake packet".format(self._mode))
         if self._mode == "server":
             if packet.status == 0:
@@ -159,9 +176,10 @@ class POOPProtocol(StackingProtocol):
                 # All agents set the sequence number on the first packet they send to be the random value
                 # they generated during the course of the Handshake Protocol.
                 self.next_seq_send = self.SSYN
-                self.last_recv_time = time.time()
+                self.last_data_time = time.time()
                 self.next_expected_ack = self.SSYN
-
+                self.next_seq_recv = packet.SYN - 1
+                self.handshake_flag = 1
                 self.higherProtocol().connection_made(self.higher_transport)
                 logger.debug("Server Poop handshake success!")
 
@@ -185,9 +203,10 @@ class POOPProtocol(StackingProtocol):
                 # All agents set the sequence number on the first packet they send to be the random value
                 # they generated during the course of the Handshake Protocol.
                 self.next_seq_send = self.CSYN
-                self.last_recv_time = time.time()
+                self.last_data_time = time.time()
                 self.next_expected_ack = self.CSYN
-
+                self.next_seq_recv = packet.SYN - 1
+                self.check_handshake_connection_timeout.cancel()
                 self.higherProtocol().connection_made(self.higher_transport)
                 logger.debug("Client Poop handshake success!")
 
@@ -203,17 +222,59 @@ class POOPProtocol(StackingProtocol):
 
     async def check_handshake_connection_timeout(self):
         while True:
-            if time.time() - self.last_recv_time > 10:
+            if time.time() - self.last_handshake_time > 10:
                 logger.debug("NO Data Transferring for a long time! Dropped!")
                 # Reset the connection
                 new_packet = StartupPacket()
                 new_packet.SYN = self.CSYN
                 new_packet.status = 0
                 self.transport.write(new_packet.__serialize__())
-            await asyncio.sleep(10 - (time.time() - self.last_recv_time))
+            await asyncio.sleep(10 - (time.time() - self.last_handshake_time))
+
+    async def check_connection_timeout(self):
+        while True:
+            if (time.time() - self.last_data_time) > 20:
+                # time out after 5 min
+                self.status = 0
+                self.transport.close()
+            await asyncio.sleep(20 - (time.time() - self.last_data_time))
 
     # --------------------------------------------------------------------------------------------------------
+    def send(self,data):
+        self.send_buffer = self.buffer + data
+        self.send_packets_inqueue()
+
+    def send_packets_inqueue(self):
+        while self.send_buffer and len(self.send_window) <= self.send_window_size and self.next_seq_send < self.next_expected_ack + self.send_window_size:
+            if len(self.send_buffer) >= 15000:
+                new_packet = DataPacket()
+                new_packet.seq = self.next_seq_send
+                new_packet.data = bytes(self.send_buffer[0:15000])
+                new_packet.hash = 0
+                new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
+                # set the send_buffer containing the part of data which larger than 15000
+                self.send_buffer = self.send_buffer[15000:]
+            else:
+                new_packet = DataPacket()
+                new_packet.seq = self.next_seq_send
+                new_packet.data = bytes(self.send_buffer[0:len(self.send_buffer)])
+                new_packet.hash = 0
+                new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
+                # set the send_buffer to be empty again
+                self.send_buffer = []
+
+            #
+            if self.next_seq_recv == 2 ** 32:
+                self.next_seq_recv = 0
+
+            else:
+                self.next_seq_send = self.next_seq_send + 1
+
+            self.send_window.append(new_packet)
+            self.transport.write(new_packet.__serialize__())
+
     def datapacket_recv(self, packet):
+        self.last_data_time = time.time()
         # Drop if not a datapacket
         if packet.DEFINITION_IDENTIFIER != "poop.datapacket":
             logger.debug("Not the expected data packet. Dropped!")
@@ -264,54 +325,52 @@ class POOPProtocol(StackingProtocol):
         while self.recv_window:
             if self.recv_window[0].seq == self.next_seq_recv:
                 self.higherProtocol().data_received(self.recv_window.pop(0).data)
-                while self.recv_window:
-                    if self.recv_window[0].seq == self.next_seq_recv:
-                        self.recv_window.pop(0)
-                    else:
-                        break
+                # while self.recv_window:
+                #     if self.recv_window[0].seq == self.next_seq_recv:
+                #         self.recv_window.pop(0)
+                #     else:
+                #         break
                 # when the received sequence number is outer bound, reset to 0
                 if self.next_seq_recv == 2 ** 32:
                     self.next_seq_recv = 0
                 else:
                     self.next_seq_recv = self.next_seq_recv + 1
             else:
+                logger.debug("There may be error??")
                 break
 
+    # --------------------------------------------------------------------------------------------------------
+    def shut(self):
+        self.send_shutdown_packet()
 
+    def send_shutdown_packet(self):
+        new_shut_packet = self.transport.write()
+        new_shut_packet.FIN = self.next_seq_recv
+        self.transport.write(new_shut_packet.__serialize__())
+        self.shutdown_time = time.time()
+        self.loop.create_task(self.check_shutdown_timeout())
+        self.status = 'FIN_SENT'
+        return
 
-    def send(self,data):
-        self.send_buffer = self.buffer + data
-        self.send_packets_inqueue()
-
-    def send_packets_inqueue(self):
-        while self.send_buffer and len(self.send_window) <= self.send_window_size and self.next_seq_send < self.next_expected_ack + self.send_window_size:
-            if len(self.send_buffer) >= 15000:
-                new_packet = DataPacket()
-                new_packet.seq = self.next_seq_send
-                new_packet.data = bytes(self.send_buffer[0:15000])
-                new_packet.hash = 0
-                new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
-                # set the send_buffer containing the part of data which larger than 15000
-                self.send_buffer = self.send_buffer[15000:]
+    async def check_shutdown_timeout(self):
+        while True:
+            if self.check_shutdown_count < 2:
+                if (time.time() - self.shutdown_time) > 5:
+                    self.send_shutdown_packet()
+                    self.check_shutdown_count = self.check_shutdown_count + 1
             else:
-                new_packet = DataPacket()
-                new_packet.seq = self.next_seq_send
-                new_packet.data = bytes(self.send_buffer[0:len(self.send_buffer)])
-                new_packet.hash = 0
-                new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
-                # set the send_buffer to be empty again
-                self.send_buffer = []
+                logger.debug("Shut down time outer bound!")
+                self.transport.close()
+            await asyncio.sleep(5 - (time.time() - self.shutdown_time))
 
-            if self.next_seq_recv == 2**32:
-                self.next_seq_recv = 0
-
-            else:
-                self.next_seq_send = self.next_seq_send + 1
-
-            self.send_window.append(new_packet)
-            self.transport.write(new_packet.__serialize__())
-
-
+    def shutdown_recv(self, packet):
+        if not packet.FIN:
+            return
+        if packet.FIN == self.next_seq_recv:
+            Fack_packet = ShutdownPacket()
+            Fack_packet.Fack = packet.FIN
+            self.transport.write(Fack_packet.__serialize__())
+            self.transport.close()
 
 # from playground.network.common import StackingProtocolFactory
 #
@@ -319,9 +378,9 @@ class POOPProtocol(StackingProtocol):
 # factory1 = PassthroughFactory()
 
 PassthroughClientFactory = StackingProtocolFactory.CreateFactoryType(
-    lambda: PassthroughProtocol(mode="client")
+    lambda: POOPProtocol(mode="client")
 )
 
 PassthroughServerFactory = StackingProtocolFactory.CreateFactoryType(
-    lambda: PassthroughProtocol(mode="server")
+    lambda: POOPProtocol(mode="server")
 )
