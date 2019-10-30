@@ -47,14 +47,8 @@ class HandshakePacket(PoopPacketType):
         ("status", UINT8),
         ("SYN", UINT32({Optional: True})),
         ("ACK", UINT32({Optional: True})),
-        ("error", STRING({Optional: True})),
+        ("hash", UINT32({Optional: True})),
     ]
-
-
-class StartupPacket(HandshakePacket):
-    DEFINITION_IDENTIFIER = "poop.startuppacket"
-    DEFINITION_VERSION = "1.0"
-
 
 class ShutdownPacket(PoopPacketType):
     DEFINITION_IDENTIFIER = "poop.shutdownpacket"
@@ -65,7 +59,7 @@ class ShutdownPacket(PoopPacketType):
 
     FIELDS = [
         ("FIN", UINT32({Optional: True})),
-        ("FACK", UINT32({Optional: True}))
+        ("hash", UINT32({Optional: True}))
     ]
 
 
@@ -122,11 +116,12 @@ class POOPProtocol(StackingProtocol):
         # At initialization, the client will set its SYN to be any random value between 0 and 2^32, server will set
         # its SYN anything between 0 and 2^32 and its ACK any random value between 0 and 2^32
         if self._mode == "client":
-            packet = StartupPacket()
+            packet = HandshakePacket()
             # The client needs to send a packet with SYN and status NOT STARTED to the server to request a connection.
             self.CSYN = random.randint(0, 2 ** 32)  # random value between 0 and 2**32
             packet.SYN = self.CSYN
             packet.status = 0  # the status should be "NOT_STARTED" at the beginning
+            packet.hash = binascii.crc32(packet.__serialize__()) & 0xffffffff
             transport.write(packet.__serialize__())
 
             # mark down the time
@@ -138,10 +133,17 @@ class POOPProtocol(StackingProtocol):
 
         for packet in self.deserializer.nextPackets():
             print(packet)
-            if packet.DEFINITION_IDENTIFIER == "poop.startuppacket":
+            if packet.DEFINITION_IDENTIFIER == "poop.handshakepacket":
                 self.handshake_recv(packet)
+
             elif packet.DEFINITION_IDENTIFIER == "poop.datapacket":
-                self.datapacket_recv(packet)
+                if self.handshake_flag == 1:
+                    self.datapacket_recv(packet)
+                else:
+                    new_packet = HandshakePacket()
+                    new_packet.status = 2
+                    self.transport.write(new_packet.__serialize__())
+
             elif packet.DEFINITION_IDENTIFIER == "poop.shutdownpacket":
                 if self.handshake_flag == 1:
                     self.shutdown_recv(packet)
@@ -163,16 +165,17 @@ class POOPProtocol(StackingProtocol):
                 if packet.SYN:
                     # Upon receiving packet, the server sends back a packet with random number from 0 to 2^32,
                     # ACK set to (SYN+1)%(2^32)and status SUCCESS.
-                    new_packet = StartupPacket()
+                    new_packet = HandshakePacket()
                     # get a random ACK and assign the value to SYN
                     self.SSYN = random.randint(0, 2 ** 32)
                     new_packet.SYN = self.SSYN
                     # make the ack + 1
                     new_packet.ACK = (packet.SYN + 1) % (2 ** 32)
                     new_packet.status = 1
+
                     self.transport.write(new_packet.__serialize__())
                 else:
-                    new_packet = StartupPacket()
+                    new_packet = HandshakePacket()
                     new_packet.status = 2
                     new_packet.error = "No SYN received!"
                     self.transport.write(new_packet.__serialize__())
@@ -192,7 +195,7 @@ class POOPProtocol(StackingProtocol):
                 logger.debug("Server Poop handshake success!")
 
             else:
-                new_packet = StartupPacket()
+                new_packet = HandshakePacket()
                 new_packet.status = 2
                 # new_packet.ACK = packet.SYN
                 new_packet.error = "The ACK doesn't match! Server Connection Lost!"
@@ -203,7 +206,7 @@ class POOPProtocol(StackingProtocol):
             # the client sends back to server a packet with ACK set to (ACK+1)%(2^32)  and status SUCCESS and acknowledge this
             # connection with server. Else, the client sends back to server a packet with status set to ERROR.
             if packet.ACK == (self.CSYN + 1) % (2 ** 32):
-                new_packet = StartupPacket()
+                new_packet = HandshakePacket()
                 new_packet.SYN = (packet.ACK + 1) % (2 ** 32)
                 new_packet.ACK = (packet.SYN + 1) % (2 ** 32)
                 new_packet.status = 1
@@ -219,7 +222,7 @@ class POOPProtocol(StackingProtocol):
                 logger.debug("Client Poop handshake success!")
 
             else:
-                new_packet = StartupPacket()
+                new_packet = HandshakePacket()
                 new_packet.status = 2
                 # new_packet.ACK = packet.SYN
                 new_packet.error = "The ACK doesn't match!  Client Connection Lost!"
@@ -233,7 +236,7 @@ class POOPProtocol(StackingProtocol):
             if time.time() - self.last_handshake_time > 10:
                 logger.debug("NO Data Transferring for a long time! Dropped!")
                 # Reset the connection
-                new_packet = StartupPacket()
+                new_packet = HandshakePacket()
                 new_packet.SYN = self.CSYN
                 new_packet.status = 0
                 self.transport.write(new_packet.__serialize__())
