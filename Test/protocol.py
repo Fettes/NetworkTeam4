@@ -278,6 +278,7 @@ class POOPProtocol(StackingProtocol):
         while count < 3:
             if self.handshake_flag == 1:
                 logger.debug("Have Connected!")
+                return
             # Reset the connection
             new_packet = HandshakePacket()
             new_packet.SYN = self.CSYN
