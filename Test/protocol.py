@@ -110,6 +110,7 @@ class POOPProtocol(StackingProtocol):
     def connection_made(self, transport):
         logger.debug("{} Poop connection made. Calling connection made higher.".format(self._mode))
         self.last_handshake_time = time.time()  # define the time of last packet received when connection made
+        self.last_handshake_time = time.time()
         self.transport = transport
         self.higher_transport = PoopTransport(transport)
         self.higher_transport.create_protocol(self)
