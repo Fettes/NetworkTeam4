@@ -282,6 +282,7 @@ class POOPProtocol(StackingProtocol):
             new_packet = HandshakePacket()
             new_packet.SYN = self.CSYN
             new_packet.status = 0
+            new_packet.hash = 0
             new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
             self.transport.write(new_packet.__serialize__())
             await asyncio.sleep(1)
