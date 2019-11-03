@@ -85,8 +85,9 @@ class POOPProtocol(StackingProtocol):
         self.loop = asyncio.get_event_loop()  # define an async function to check the time out
         self.status = 0  # initiate the status and use the status to control the protocol procedure
         self.handshake_flag = 0  # check the handshake flag if it is success or not
-        self.CSYN = 0
-        self.SSYN = 0
+        self.init_SYN = 0
+        self.SYN = 0
+        self.ACK = 0
         self.shut_SYN = 0
         self.FIN = 0
         self.last_handshake_time = 0  # initiate the time of the last handshake packet received
@@ -109,21 +110,22 @@ class POOPProtocol(StackingProtocol):
 
     def connection_made(self, transport):
         logger.debug("{} Poop connection made. Calling connection made higher.".format(self._mode))
-        self.last_handshake_time = time.time()  # define the time of last packet received when connection made
-        self.last_data_time = time.time()
+        self.last_data_time = time.time()  # define the time of last packet received when connection made
         self.transport = transport
         self.higher_transport = PoopTransport(transport)
         self.higher_transport.create_protocol(self)
         # self.loop.create_task(self.check_connection_timeout())
+        self.init_SYN = random.randint(0, 2 ** 32)
+        self.SYN = self.init_SYN
 
         # At initialization, the client will set its SYN to be any random value between 0 and 2^32, server will set
         # its SYN anything between 0 and 2^32 and its ACK any random value between 0 and 2^32
         if self._mode == "client":
+            tmp_packet = HandshakePacket(SYN=self.SYN, status=0, hash=0)
+
             packet = HandshakePacket()
-            tmp_packet = HandshakePacket(SYN=self.CSYN, status=0, hash=0)
             # The client needs to send a packet with SYN and status NOT STARTED to the server to request a connection.
-            self.CSYN = random.randint(0, 2 ** 32)  # random value between 0 and 2**32
-            packet.SYN = self.CSYN
+            packet.SYN = self.SYN
             packet.status = 0  # the status should be "NOT_STARTED" at the beginning
             packet.hash = binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff
 
@@ -132,6 +134,7 @@ class POOPProtocol(StackingProtocol):
             # mark down the time
             self.handshake_last_time = self.loop.create_task(self.check_handshake_connection_timeout())
             # self.send_window.append(packet.__serialize__())
+            # self.loop.create_task(self.resend_check())
 
     def data_received(self, buffer):
         logger.debug("{} passthrough received a buffer of size {}".format(self._mode, len(buffer)))
@@ -178,37 +181,39 @@ class POOPProtocol(StackingProtocol):
                     # ACK set to (SYN+1)%(2^32)and status SUCCESS.
                     new_packet = HandshakePacket()
                     # get a random ACK and assign the value to SYN
-                    self.SSYN = random.randint(0, 2 ** 32)
-                    new_packet.SYN = self.SSYN
+                    new_packet.SYN = self.SYN
                     # make the ack + 1
                     new_packet.ACK = (packet.SYN + 1) % (2 ** 32)
                     new_packet.status = 1
                     new_packet.hash = 0
                     new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
+                    # --------
+                    self.ACK = new_packet.ACK
 
                     self.transport.write(new_packet.__serialize__())
+                    logger.debug("server SYN received")
                     # self.send_window.append(new_packet.__serialize__())
                 else:
                     # No syn received
                     self.handshake_send_error()
                     return
 
-            elif packet.ACK:
+            elif packet.status == 1 and packet.ACK:
                 tmp_packet = HandshakePacket(SYN=packet.SYN, ACK=packet.ACK, status=packet.status, hash=0)
 
                 if binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff != packet.hash:
                     return
 
-                if packet.ACK == (self.SSYN + 1) % (2 ** 32):
+                if packet.ACK == (self.SYN + 1) % (2 ** 32) and packet.SYN == self.ACK:
                     self.send_window = []
                     # Upon receiving the SUCCESS packet, the server checks if ACK is old ACK plus 1. If success, the server
                     # acknowledges this connection. Else, the server sends back a packet to the client with status
                     # ERROR.
                     # All agents set the sequence number on the first packet they send to be the random value
                     # they generated during the course of the Handshake Protocol.
-                    self.next_seq_send = self.SSYN
+                    self.next_seq_send = self.SYN
                     self.last_data_time = time.time()
-                    self.next_expected_ack = self.SSYN
+                    self.next_expected_ack = self.SYN
                     self.next_seq_recv = packet.SYN - 1
                     self.handshake_flag = 1
                     self.higherProtocol().connection_made(self.higher_transport)
@@ -234,7 +239,7 @@ class POOPProtocol(StackingProtocol):
                 if binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff != packet.hash:
                     return
 
-                if packet.ACK == (self.CSYN + 1) % (2 ** 32):
+                if packet.ACK == (self.SYN + 1) % (2 ** 32):
                     self.send_window = []
                     new_packet = HandshakePacket()
                     new_packet.SYN = (packet.ACK + 1) % (2 ** 32)
@@ -247,9 +252,9 @@ class POOPProtocol(StackingProtocol):
                     # self.send_window.append(new_packet.__serialize__())
                     # All agents set the sequence number on the first packet they send to be the random value
                     # they generated during the course of the Handshake Protocol.
-                    self.next_seq_send = self.CSYN
+                    self.next_seq_send = self.SYN
                     self.last_data_time = time.time()
-                    self.next_expected_ack = self.CSYN
+                    self.next_expected_ack = self.SYN
                     self.next_seq_recv = packet.SYN - 1
                     self.handshake_flag = 1
                     self.handshake_last_time.cancel()
@@ -289,7 +294,6 @@ class POOPProtocol(StackingProtocol):
             new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
             self.transport.write(new_packet.__serialize__())
             await asyncio.sleep(1)
-            # await asyncio.sleep(10 - (time.time() - self.last_handshake_time))
             count = count + 1
 
     async def check_connection_timeout(self):
