@@ -11,7 +11,7 @@ import binascii
 logger = logging.getLogger("playground.__connector__." + __name__)
 
 
-## Pre-defined packet class in PRFC
+# Pre-defined packet class in PRFC
 class PoopPacketType(PacketType):
     DEFINITION_IDENTIFIER = "poop"
     DEFINITION_VERSION = "1.0"
@@ -29,12 +29,6 @@ class DataPacket(PoopPacketType):
     ]
 
 
-class ResendPacket(DataPacket):
-    DEFINITION_IDENTIFIER = "poop.resendpacket"
-    DEFINITION_VERSION = "1.0"
-    TIMESTAMP = 0
-
-
 class HandshakePacket(PoopPacketType):
     DEFINITION_IDENTIFIER = "poop.handshakepacket"
     DEFINITION_VERSION = "1.0"
@@ -47,8 +41,9 @@ class HandshakePacket(PoopPacketType):
         ("status", UINT8),
         ("SYN", UINT32({Optional: True})),
         ("ACK", UINT32({Optional: True})),
-        ("hash", UINT32({Optional: True})),
+        ("hash", UINT32),
     ]
+
 
 class ShutdownPacket(PoopPacketType):
     DEFINITION_IDENTIFIER = "poop.shutdownpacket"
@@ -61,6 +56,12 @@ class ShutdownPacket(PoopPacketType):
         ("FIN", UINT32({Optional: True})),
         ("hash", UINT32({Optional: True}))
     ]
+
+
+class ResendPacket(DataPacket):
+    DEFINITION_IDENTIFIER = "poop.resendpacket"
+    DEFINITION_VERSION = "1.0"
+    TIMESTAMP = 0
 
 
 # inherit the StackingTransport
@@ -117,15 +118,18 @@ class POOPProtocol(StackingProtocol):
         # its SYN anything between 0 and 2^32 and its ACK any random value between 0 and 2^32
         if self._mode == "client":
             packet = HandshakePacket()
+            tmp_packet = HandshakePacket(SYN=self.CSYN, status=0, hash=0)
             # The client needs to send a packet with SYN and status NOT STARTED to the server to request a connection.
             self.CSYN = random.randint(0, 2 ** 32)  # random value between 0 and 2**32
             packet.SYN = self.CSYN
             packet.status = 0  # the status should be "NOT_STARTED" at the beginning
-            packet.hash = binascii.crc32(packet.__serialize__()) & 0xffffffff
+            packet.hash = binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff
+
             transport.write(packet.__serialize__())
 
             # mark down the time
             self.handshake_last_time = self.loop.create_task(self.check_handshake_connection_timeout())
+            # self.send_window.append(packet.__serialize__())
 
     def data_received(self, buffer):
         logger.debug("{} passthrough received a buffer of size {}".format(self._mode, len(buffer)))
@@ -163,6 +167,10 @@ class POOPProtocol(StackingProtocol):
         if self._mode == "server":
             if packet.status == 0:
                 if packet.SYN:
+                    tmp_packet = HandshakePacket(SYN=packet.SYN, status=packet.status, hash=0)
+
+                    if binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff != packet.hash:
+                        return
                     # Upon receiving packet, the server sends back a packet with random number from 0 to 2^32,
                     # ACK set to (SYN+1)%(2^32)and status SUCCESS.
                     new_packet = HandshakePacket()
@@ -172,75 +180,113 @@ class POOPProtocol(StackingProtocol):
                     # make the ack + 1
                     new_packet.ACK = (packet.SYN + 1) % (2 ** 32)
                     new_packet.status = 1
+                    new_packet.hash = 0
+                    new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
 
                     self.transport.write(new_packet.__serialize__())
+                    # self.send_window.append(new_packet.__serialize__())
                 else:
-                    new_packet = HandshakePacket()
-                    new_packet.status = 2
-                    new_packet.error = "No SYN received!"
-                    self.transport.write(new_packet.__serialize__())
+                    # No syn received
+                    self.handshake_send_error()
+                    return
 
-            elif packet.ACK == (self.SSYN + 1) % (2 ** 32):
-                # Upon receiving the SUCCESS packet, the server checks if ACK is old ACK plus 1. If success, the server
-                # acknowledges this connection. Else, the server sends back a packet to the client with status
-                # ERROR.
-                # All agents set the sequence number on the first packet they send to be the random value
-                # they generated during the course of the Handshake Protocol.
-                self.next_seq_send = self.SSYN
-                self.last_data_time = time.time()
-                self.next_expected_ack = self.SSYN
-                self.next_seq_recv = packet.SYN - 1
-                self.handshake_flag = 1
-                self.higherProtocol().connection_made(self.higher_transport)
-                logger.debug("Server Poop handshake success!")
+            elif packet.ACK:
+                tmp_packet = HandshakePacket(SYN=packet.SYN, ACK=packet.ACK, status=packet.status, hash=0)
+
+                if binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff != packet.hash:
+                    return
+
+                if packet.ACK == (self.SSYN + 1) % (2 ** 32):
+                    self.send_window = []
+                    # Upon receiving the SUCCESS packet, the server checks if ACK is old ACK plus 1. If success, the server
+                    # acknowledges this connection. Else, the server sends back a packet to the client with status
+                    # ERROR.
+                    # All agents set the sequence number on the first packet they send to be the random value
+                    # they generated during the course of the Handshake Protocol.
+                    self.next_seq_send = self.SSYN
+                    self.last_data_time = time.time()
+                    self.next_expected_ack = self.SSYN
+                    self.next_seq_recv = packet.SYN - 1
+                    self.handshake_flag = 1
+                    self.higherProtocol().connection_made(self.higher_transport)
+                    logger.debug("Server Poop handshake success!")
+
+                else:
+                    # not the expected ack
+                    self.handshake_send_error()
+                    return
 
             else:
-                new_packet = HandshakePacket()
-                new_packet.status = 2
-                # new_packet.ACK = packet.SYN
-                new_packet.error = "The ACK doesn't match! Server Connection Lost!"
-                self.transport.write(new_packet.__serialize__())
+                # no ack received
+                self.handshake_send_error()
+                return
 
         elif self._mode == "client":
             # Upon receiving the SUCCESS packet, the client checks if new ACK is old SYN + 1. If it is correct,
             # the client sends back to server a packet with ACK set to (ACK+1)%(2^32)  and status SUCCESS and acknowledge this
             # connection with server. Else, the client sends back to server a packet with status set to ERROR.
-            if packet.ACK == (self.CSYN + 1) % (2 ** 32):
-                new_packet = HandshakePacket()
-                new_packet.SYN = (packet.ACK + 1) % (2 ** 32)
-                new_packet.ACK = (packet.SYN + 1) % (2 ** 32)
-                new_packet.status = 1
-                self.transport.write(new_packet.__serialize__())
-                # All agents set the sequence number on the first packet they send to be the random value
-                # they generated during the course of the Handshake Protocol.
-                self.next_seq_send = self.CSYN
-                self.last_data_time = time.time()
-                self.next_expected_ack = self.CSYN
-                self.next_seq_recv = packet.SYN - 1
-                self.check_handshake_connection_timeout.cancel()
-                self.higherProtocol().connection_made(self.higher_transport)
-                logger.debug("Client Poop handshake success!")
+            if packet.ACK:
+                tmp_packet = HandshakePacket(SYN=packet.SYN, ACK=packet.ACK, status=packet.status, hash=0)
 
+                if binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff != packet.hash:
+                    return
+
+                if packet.ACK == (self.CSYN + 1) % (2 ** 32):
+                    self.send_window = []
+                    new_packet = HandshakePacket()
+                    new_packet.SYN = (packet.ACK + 1) % (2 ** 32)
+                    new_packet.ACK = (packet.SYN + 1) % (2 ** 32)
+                    new_packet.status = 1
+                    new_packet.hash = 0
+                    new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
+
+                    self.transport.write(new_packet.__serialize__())
+                    # self.send_window.append(new_packet.__serialize__())
+                    # All agents set the sequence number on the first packet they send to be the random value
+                    # they generated during the course of the Handshake Protocol.
+                    self.next_seq_send = self.CSYN
+                    self.last_data_time = time.time()
+                    self.next_expected_ack = self.CSYN
+                    self.next_seq_recv = packet.SYN - 1
+                    self.handshake_flag = 1
+                    self.handshake_last_time.cancel()
+                    self.higherProtocol().connection_made(self.higher_transport)
+                    logger.debug("Client Poop handshake success!")
+
+                else:
+                    # not the expected ack
+                    self.handshake_send_error()
+                    return
             else:
-                new_packet = HandshakePacket()
-                new_packet.status = 2
-                # new_packet.ACK = packet.SYN
-                new_packet.error = "The ACK doesn't match!  Client Connection Lost!"
-                self.transport.write(new_packet.__serialize__())
+                # no ack received
+                self.handshake_send_error()
+                return
 
         elif self.status == 2:
             logger.debug("{} received an error packet".format(self._mode))
 
+    def handshake_send_error(self):
+        logger.debug("handshake error!")
+        error_pkt = HandshakePacket()
+        error_pkt.status = 2
+        error_pkt.hash = binascii.crc32(error_pkt.__serialize__()) & 0xffffffff
+        self.transport.write(error_pkt.__serialize__())
+        return
+
     async def check_handshake_connection_timeout(self):
-        while True:
-            if time.time() - self.last_handshake_time > 10:
-                logger.debug("NO Data Transferring for a long time! Dropped!")
-                # Reset the connection
-                new_packet = HandshakePacket()
-                new_packet.SYN = self.CSYN
-                new_packet.status = 0
-                self.transport.write(new_packet.__serialize__())
-            await asyncio.sleep(10 - (time.time() - self.last_handshake_time))
+        count = 0
+        while count < 3:
+            if self.handshake_flag == 1:
+                logger.debug("Have Connected!")
+            # Reset the connection
+            new_packet = HandshakePacket()
+            new_packet.SYN = self.CSYN
+            new_packet.status = 0
+            new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
+            self.transport.write(new_packet.__serialize__())
+            await asyncio.sleep(1)
+            # await asyncio.sleep(10 - (time.time() - self.last_handshake_time))
+            count = count + 1
 
     async def check_connection_timeout(self):
         while True:
