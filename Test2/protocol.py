@@ -537,8 +537,8 @@ class POOP(StackingProtocol):
             self.loop.create_task(self.wait_ack_timeout(pkt))
 
 
-POOPClientFactory = StackingProtocolFactory.CreateFactoryType(
+PassthroughClientFactory = StackingProtocolFactory.CreateFactoryType(
     lambda: POOP(mode="client"))
 
-POOPServerFactory = StackingProtocolFactory.CreateFactoryType(
+PassthroughServerFactory = StackingProtocolFactory.CreateFactoryType(
     lambda: POOP(mode="server"))

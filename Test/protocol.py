@@ -114,7 +114,7 @@ class POOPProtocol(StackingProtocol):
         self.transport = transport
         self.higher_transport = PoopTransport(transport)
         self.higher_transport.create_protocol(self)
-        self.loop.create_task(self.check_connection_timeout())
+        # self.loop.create_task(self.check_connection_timeout())
 
         # At initialization, the client will set its SYN to be any random value between 0 and 2^32, server will set
         # its SYN anything between 0 and 2^32 and its ACK any random value between 0 and 2^32
@@ -272,8 +272,6 @@ class POOPProtocol(StackingProtocol):
         logger.debug("handshake error!")
         error_packet = HandshakePacket(status=2,hash=0)
         error_packet.hash = binascii.crc32(error_packet.__serialize__()) & 0xffffffff
-        print("xxxxxxxxxxxxxxxxxxxxxxxxxxx")
-        print(error_packet.hash)
         self.transport.write(error_packet.__serialize__())
         return
 
