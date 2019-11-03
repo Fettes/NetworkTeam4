@@ -270,7 +270,7 @@ class POOPProtocol(StackingProtocol):
 
     def handshake_send_error(self):
         logger.debug("handshake error!")
-        error_packet = HandshakePacket(status=2)
+        error_packet = HandshakePacket(status=2,hash=0)
         error_packet.hash = binascii.crc32(error_packet.__serialize__()) & 0xffffffff
         print("xxxxxxxxxxxxxxxxxxxxxxxxxxx")
         print(error_packet.hash)
