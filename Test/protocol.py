@@ -79,6 +79,7 @@ class PoopTransport(StackingTransport):
 
 class POOPProtocol(StackingProtocol):
     def __init__(self, mode):
+        logger.debug("{} POOP: init protocol".format(mode))
         super().__init__()
         self._mode = mode
         self.loop = asyncio.get_event_loop()  # define an async function to check the time out
@@ -164,6 +165,7 @@ class POOPProtocol(StackingProtocol):
     def handshake_recv(self, packet):
         self.last_handshake_time = time.time()
         logger.debug("{} received a handshake packet".format(self._mode))
+
         if self._mode == "server":
             if packet.status == 0:
                 if packet.SYN:
