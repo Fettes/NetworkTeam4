@@ -269,10 +269,9 @@ class POOPProtocol(StackingProtocol):
 
     def handshake_send_error(self):
         logger.debug("handshake error!")
-        error_pkt = HandshakePacket()
-        error_pkt.status = 2
-        error_pkt.hash = binascii.crc32(error_pkt.__serialize__()) & 0xffffffff
-        self.transport.write(error_pkt.__serialize__())
+        error_packet = HandshakePacket(status=2)
+        error_packet.hash = binascii.crc32(error_packet.__serialize__()) & 0xffffffff
+        self.transport.write(error_packet.__serialize__())
         return
 
     async def check_handshake_connection_timeout(self):
