@@ -53,8 +53,8 @@ class ShutdownPacket(PoopPacketType):
     ERROR = 1
 
     FIELDS = [
-        ("FIN", UINT32({Optional: True})),
-        ("hash", UINT32({Optional: True}))
+        ("FIN", UINT32),
+        ("hash", UINT32)
     ]
 
 
@@ -113,7 +113,7 @@ class POOPProtocol(StackingProtocol):
         self.transport = transport
         self.higher_transport = PoopTransport(transport)
         self.higher_transport.create_protocol(self)
-        self.loop.create_task(self.resend_check())
+        # self.loop.create_task(self.resend_check())
 
         # At initialization, the client will set its SYN to be any random value between 0 and 2^32, server will set
         # its SYN anything between 0 and 2^32 and its ACK any random value between 0 and 2^32
@@ -271,6 +271,8 @@ class POOPProtocol(StackingProtocol):
         logger.debug("handshake error!")
         error_packet = HandshakePacket(status=2)
         error_packet.hash = binascii.crc32(error_packet.__serialize__()) & 0xffffffff
+        print("xxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        print(error_packet.hash)
         self.transport.write(error_packet.__serialize__())
         return
 
@@ -296,7 +298,9 @@ class POOPProtocol(StackingProtocol):
             if (time.time() - self.last_data_time) > 20:
                 # time out after 5 min
                 self.status = 0
+                self.higherProtocol().connection_lost(None)
                 self.transport.close()
+                return
             await asyncio.sleep(20 - (time.time() - self.last_data_time))
 
     # --------------------------------------------------------------------------------------------------------
