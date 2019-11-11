@@ -1,17 +1,19 @@
-from playground.network.common.Protocol import StackingProtocolFactory, StackingProtocol, StackingTransport
-from playground.network.packet import PacketType
-from playground.network.packet.fieldtypes import STRING, UINT8, BUFFER, UINT32, BOOL
-from playground.network.packet.fieldtypes.attributes import Optional
-import random
+from playground.network.common import StackingProtocolFactory, StackingProtocol, StackingTransport
 import logging
 import time
 import asyncio
+from random import randrange
+from playground.network.packet import PacketType
+from playground.network.packet.fieldtypes import UINT8, UINT32, STRING, BUFFER
+from playground.network.packet.fieldtypes.attributes import Optional
+# 9:47
+
 import binascii
+import bisect
 
 logger = logging.getLogger("playground.__connector__." + __name__)
 
 
-# Pre-defined packet class in PRFC
 class PoopPacketType(PacketType):
     DEFINITION_IDENTIFIER = "poop"
     DEFINITION_VERSION = "1.0"
@@ -20,12 +22,12 @@ class PoopPacketType(PacketType):
 class DataPacket(PoopPacketType):
     DEFINITION_IDENTIFIER = "poop.datapacket"
     DEFINITION_VERSION = "1.0"
+
     FIELDS = [
         ("seq", UINT32({Optional: True})),
         ("hash", UINT32),
         ("data", BUFFER({Optional: True})),
-        ("ACK", UINT32({Optional: True}))
-
+        ("ACK", UINT32({Optional: True})),
     ]
 
 
@@ -38,10 +40,10 @@ class HandshakePacket(PoopPacketType):
     ERROR = 2
 
     FIELDS = [
-        ("status", UINT8),
         ("SYN", UINT32({Optional: True})),
         ("ACK", UINT32({Optional: True})),
-        ("hash", UINT32),
+        ("status", UINT8),
+        ("hash", UINT32)
     ]
 
 
@@ -58,416 +60,490 @@ class ShutdownPacket(PoopPacketType):
     ]
 
 
-class ResendPacket(DataPacket):
-    DEFINITION_IDENTIFIER = "poop.resendpacket"
-    DEFINITION_VERSION = "1.0"
-    TIMESTAMP = 0
-
-
-# inherit the StackingTransport
-class PoopTransport(StackingTransport):
-    def create_protocol(self, protocol):
+class POOPTransport(StackingTransport):
+    def connect_protocol(self, protocol):
         self.protocol = protocol
 
-    # overwrite the write() and close()
     def write(self, data):
-        self.protocol.send(data)
+        self.protocol.send_data(data)
 
     def close(self):
-        self.protocol.shut()
+        self.protocol.init_close()
 
 
-class POOPProtocol(StackingProtocol):
+class ErrorHandleClass():
+    def handleException(self, e):
+        print(e)
+
+
+class POOP(StackingProtocol):
     def __init__(self, mode):
         logger.debug("{} POOP: init protocol".format(mode))
+        print("test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         super().__init__()
-        self._mode = mode
-        self.loop = asyncio.get_event_loop()  # define an async function to check the time out
-        self.status = 0  # initiate the status and use the status to control the protocol procedure
-        self.handshake_flag = 0  # check the handshake flag if it is success or not
-        self.init_SYN = 0
-        self.SYN = 0
-        self.ACK = 0
-        self.shut_SYN = 0
-        self.FIN = 0
-        self.last_handshake_time = 0  # initiate the time of the last handshake packet received
-        self.last_data_time = 0  # initiate the time of the last data packet received
-        self.shutdown_time = 0
-        self.check_shutdown_count = 0
-        self.handshake_last_time = 0  # initiate the time of handshake, just for debugging
-        self.transport = None  # initiate the current layer transport first
-        self.higher_transport = None  # initiate the higher layer transport first
-        self.next_seq_send = 0  # initiate the sequence number of next packet
-        self.next_expected_ack = 0  # initiate the expected ack number of next packet
-        self.next_seq_recv = 0
-        self.send_window = []  # the send window
-        self.recv_window = []  # the recv window
-        self.send_window_size = 10  # define the window size of send window
-        self.recv_window_size = 10  # define the window size of recv window
-        self.send_buffer = []  # the current data buffer
 
-        self.deserializer = PoopPacketType.Deserializer()
+        self._mode = mode
+        # 0 = no connection, 1 = waiting for handshake ack, 2 = connection established, 3 = dying
+        self.SYN = None
+        self.FIN = None
+        self.status = 0
+        self.last_recv = 0  # time of last pkt received
+        self.shutdown_wait_start = 0
+        # sequence number of last received data pkt that was passed up to the app layer
+        self.last_in_order_seq = 0
+        self.recv_queue = []
+        self.recv_wind_size = 10
+        self.recv_next = None
+        self.send_buff = []
+        self.send_packet = None
+        self.send_packet_time = 0
+        self.send_queue = []
+        self.send_wind_size = 5
+        self.send_next = None  # sequence number of next pkt to send
+        self.seq = randrange(255)
+        self.higher_transport = None
+        self.deserializer = PoopPacketType.Deserializer(
+            errHandler=ErrorHandleClass())
+        self.next_expected_ack = None
 
     def connection_made(self, transport):
-        logger.debug("{} Poop connection made. Calling connection made higher.".format(self._mode))
-        self.last_data_time = time.time()  # define the time of last packet received when connection made
+        logger.debug("{} POOP: connection made".format(self._mode))
+        self.loop = asyncio.get_event_loop()
+        self.last_recv = time.time()
+        self.loop.create_task(self.connection_timeout_check())
         self.transport = transport
-        self.higher_transport = PoopTransport(transport)
-        self.higher_transport.create_protocol(self)
-        # self.loop.create_task(self.check_connection_timeout())
-        self.init_SYN = random.randint(0, 2 ** 32)
-        self.SYN = self.init_SYN
 
-        # At initialization, the client will set its SYN to be any random value between 0 and 2^32, server will set
-        # its SYN anything between 0 and 2^32 and its ACK any random value between 0 and 2^32
-        if self._mode == "client":
-            tmp_packet = HandshakePacket(SYN=self.SYN, status=0, hash=0)
+        self.higher_transport = POOPTransport(transport)
+        self.higher_transport.connect_protocol(self)
 
-            packet = HandshakePacket()
-            # The client needs to send a packet with SYN and status NOT STARTED to the server to request a connection.
-            packet.SYN = self.SYN
-            packet.status = 0  # the status should be "NOT_STARTED" at the beginning
-            packet.hash = binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff
+        self.SYN = randrange(2**32)
+        self.status = "LISTEN"
+        if self._mode == "client":  # client send first packet
+            handshake_pkt = HandshakePacket(SYN=self.SYN, status=0, hash=0)
+            handshake_pkt.hash = binascii.crc32(
+                handshake_pkt.__serialize__()) & 0xffffffff
+            self.transport.write(handshake_pkt.__serialize__())
 
-            transport.write(packet.__serialize__())
-
-            # mark down the time
-            self.handshake_last_time = self.loop.create_task(self.check_handshake_connection_timeout())
-            # self.send_window.append(packet.__serialize__())
-            # self.loop.create_task(self.resend_check())
-
-    def data_received(self, buffer):
-        logger.debug("{} passthrough received a buffer of size {}".format(self._mode, len(buffer)))
-        self.deserializer.update(buffer)
-
-        for packet in self.deserializer.nextPackets():
-            print(packet)
-            if packet.DEFINITION_IDENTIFIER == "poop.handshakepacket":
-                self.handshake_recv(packet)
-
-            elif packet.DEFINITION_IDENTIFIER == "poop.datapacket":
-                if self.handshake_flag == 1:
-                    self.datapacket_recv(packet)
-                else:
-                    new_packet = HandshakePacket()
-                    new_packet.status = 2
-                    self.transport.write(new_packet.__serialize__())
-
-            elif packet.DEFINITION_IDENTIFIER == "poop.shutdownpacket":
-                if self.handshake_flag == 1:
-                    self.shutdown_recv(packet)
-                else:
-                    new_packet = HandshakePacket()
-                    new_packet.status = 2
-                    self.transport.write(new_packet.__serialize__())
-
-    def connection_lost(self, exc):
-        logger.debug("{} passthrough connection lost. Shutting down higher layer.".format(self._mode))
-        self.higherProtocol().connection_lost(exc)
-
-    # --------------------------------------------------------------------------------------------------------
-    def handshake_recv(self, packet):
-        self.last_handshake_time = time.time()
-        logger.debug("{} received a handshake packet".format(self._mode))
-
-        if self._mode == "server":
-            if packet.status == 0:
-                if packet.SYN:
-                    tmp_packet = HandshakePacket(SYN=packet.SYN, status=packet.status, hash=0)
-
-                    if binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff != packet.hash:
-                        return
-                    # Upon receiving packet, the server sends back a packet with random number from 0 to 2^32,
-                    # ACK set to (SYN+1)%(2^32)and status SUCCESS.
-                    new_packet = HandshakePacket()
-                    # get a random ACK and assign the value to SYN
-                    new_packet.SYN = self.SYN
-                    # make the ack + 1
-                    new_packet.ACK = (packet.SYN + 1) % (2 ** 32)
-                    new_packet.status = 1
-                    new_packet.hash = 0
-                    new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
-                    # --------
-                    self.ACK = new_packet.ACK
-
-                    self.transport.write(new_packet.__serialize__())
-                    logger.debug("server SYN received")
-                    # self.send_window.append(new_packet.__serialize__())
-                else:
-                    # No syn received
-                    self.handshake_send_error()
-                    return
-
-            elif packet.status == 1 and packet.ACK:
-                tmp_packet = HandshakePacket(SYN=packet.SYN, ACK=packet.ACK, status=packet.status, hash=0)
-
-                if binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff != packet.hash:
-                    return
-
-                if packet.ACK == (self.SYN + 1) % (2 ** 32) and packet.SYN == self.ACK:
-                    self.send_window = []
-                    # Upon receiving the SUCCESS packet, the server checks if ACK is old ACK plus 1. If success, the server
-                    # acknowledges this connection. Else, the server sends back a packet to the client with status
-                    # ERROR.
-                    # All agents set the sequence number on the first packet they send to be the random value
-                    # they generated during the course of the Handshake Protocol.
-                    self.next_seq_send = self.SYN
-                    self.last_data_time = time.time()
-                    self.next_expected_ack = self.SYN
-                    self.next_seq_recv = packet.SYN - 1
-                    self.handshake_flag = 1
-                    self.higherProtocol().connection_made(self.higher_transport)
-                    logger.debug("Server Poop handshake success!")
-
-                else:
-                    # not the expected ack
-                    self.handshake_send_error()
-                    return
-
-            else:
-                # no ack received
-                self.handshake_send_error()
-                return
-
-        elif self._mode == "client":
-            # Upon receiving the SUCCESS packet, the client checks if new ACK is old SYN + 1. If it is correct,
-            # the client sends back to server a packet with ACK set to (ACK+1)%(2^32)  and status SUCCESS and acknowledge this
-            # connection with server. Else, the client sends back to server a packet with status set to ERROR.
-            if packet.ACK:
-                tmp_packet = HandshakePacket(SYN=packet.SYN, ACK=packet.ACK, status=packet.status, hash=0)
-
-                if binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff != packet.hash:
-                    return
-
-                if packet.ACK == (self.SYN + 1) % (2 ** 32):
-                    self.send_window = []
-                    new_packet = HandshakePacket()
-                    new_packet.SYN = (packet.ACK + 1) % (2 ** 32)
-                    new_packet.ACK = (packet.SYN + 1) % (2 ** 32)
-                    new_packet.status = 1
-                    new_packet.hash = 0
-                    new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
-
-                    self.transport.write(new_packet.__serialize__())
-                    # self.send_window.append(new_packet.__serialize__())
-                    # All agents set the sequence number on the first packet they send to be the random value
-                    # they generated during the course of the Handshake Protocol.
-                    self.next_seq_send = self.SYN
-                    self.last_data_time = time.time()
-                    self.next_expected_ack = self.SYN
-                    self.next_seq_recv = packet.SYN - 1
-                    self.handshake_flag = 1
-                    self.handshake_last_time.cancel()
-                    self.higherProtocol().connection_made(self.higher_transport)
-                    logger.debug("Client Poop handshake success!")
-
-                else:
-                    # not the expected ack
-                    self.handshake_send_error()
-                    return
-            else:
-                # no ack received
-                self.handshake_send_error()
-                return
-
-        elif self.status == 2:
-            logger.debug("{} received an error packet".format(self._mode))
+            # TODO:start timer
+            self.handshake_timeout_task = self.loop.create_task(
+                self.handshake_timeout_check())
+            self.status = 'SYN_SENT'
+            # save sended handshake packet
+            self.send_buff.append(handshake_pkt.__serialize__())
 
     def handshake_send_error(self):
-        logger.debug("handshake error!")
-        error_packet = HandshakePacket(status=2,hash=0)
-        error_packet.hash = binascii.crc32(error_packet.__serialize__()) & 0xffffffff
-        self.transport.write(error_packet.__serialize__())
+        print("handshake error!")
+        error_pkt = HandshakePacket(status=2)
+        error_pkt.hash = binascii.crc32(error_pkt.__serialize__()) & 0xffffffff
+        self.transport.write(error_pkt.__serialize__())
         return
 
-    async def check_handshake_connection_timeout(self):
+    def printpkt(self, pkt):  # try to print packet content
+        print("-----------")
+        for f in pkt.FIELDS:
+            fname = f[0]
+            print(fname + ": " + pkt._fields[fname]._data)
+        print("-----------")
+        return
+
+    def handshake_pkt_recv(self, pkt):
+        if pkt.status == 2:
+            # ERROR
+            logger.debug("{} POOP: ERROR recv a error pkt ".format(self._mode))
+            # TODO: resend packet
+            self.transport.write(self.send_buff[0])
+            return
+        elif self.status == "LISTEN":
+            if pkt.status == 0:
+                if pkt.SYN:  # server LISTEN and handshake get the packet from the client
+                    pkt_copy = HandshakePacket(SYN=pkt.SYN,
+                                               status=pkt.status,
+                                               hash=0)
+                    if binascii.crc32(
+                            pkt_copy.__serialize__()) & 0xffffffff != pkt.hash:
+                        return
+                    handshake_pkt = HandshakePacket(SYN=self.SYN,
+                                                    ACK=pkt.SYN + 1,
+                                                    status=1,
+                                                    hash=0)
+                    handshake_pkt.hash = binascii.crc32(
+                        handshake_pkt.__serialize__()) & 0xffffffff
+                    self.transport.write(handshake_pkt.__serialize__())
+                    self.status = "SYN_SENT"
+                    self.send_buff.append(handshake_pkt.__serialize__())  # @
+                else:
+                    # ERROR: there is no SYN in the handshake packet
+                    self.handshake_send_error()
+                    return
+            elif pkt.status == 1:
+                # ERROR: handshake packet status shouldn't be 1 when the server status is LISTEN
+                self.handshake_send_error()
+                return
+            else:
+                # ERROR: not expecting status=2
+                self.handshake_send_error()
+                return
+        elif self.status == "SYN_SENT":  # server or client already send packet waiting for ack
+            if pkt.status == 1:
+                if pkt.ACK:  # is ack packet
+                    pkt_copy = HandshakePacket(SYN=pkt.SYN,
+                                               ACK=pkt.ACK,
+                                               status=pkt.status,
+                                               hash=0)
+                    if binascii.crc32(
+                            pkt_copy.__serialize__()) & 0xffffffff != pkt.hash:
+                        return
+                    if pkt.ACK == self.SYN + 1:  # ack packet is what expected
+                        # previous sended packet get ack so can remove the previous packet
+                        # previous_hs_packet = self.send_buff.pop(0)
+                        self.send_buff = []
+                        if self._mode == "client":
+                            handshake_pkt = HandshakePacket(SYN=self.SYN + 1,
+                                                            ACK=pkt.SYN + 1,
+                                                            status=1,
+                                                            hash=0)
+                            handshake_pkt.hash = binascii.crc32(
+                                handshake_pkt.__serialize__()) & 0xffffffff
+                            self.transport.write(handshake_pkt.__serialize__())
+                            self.send_buff.append(
+                                handshake_pkt.__serialize__())  # @
+                            self.handshake_timeout_task.cancel()
+                        self.status = "ESTABLISHED"
+                        self.send_next = self.SYN
+                        self.next_expected_ack = self.SYN
+                        self.recv_next = pkt.SYN - 1
+                        self.last_recv = time.time()
+                        self.loop.create_task(self.wait_ack_timeout())
+                        self.higherProtocol().connection_made(
+                            self.higher_transport)
+                        logger.debug("{} POOP: handshake success!".format(
+                            self._mode))
+                    else:
+                        # ERROR: the number of ACK in handshake is not expected
+                        self.handshake_send_error()
+                        return
+                else:
+                    # ERROR: there is no ACK in handshake packet
+                    self.handshake_send_error()
+                    return
+            elif pkt.status == 0:  # server ack packet dropped and the client just assume their syn packet dropped, the handshake
+                # previous_hs_packet = self.send_buff.pop(0)
+                self.send_buff = []
+                if pkt.SYN:
+                    pkt_copy = HandshakePacket(SYN=pkt.SYN,
+                                               status=pkt.status,
+                                               hash=0)
+                    if binascii.crc32(
+                            pkt_copy.__serialize__()) & 0xffffffff != pkt.hash:
+                        return
+                    handshake_pkt = HandshakePacket(SYN=self.SYN,
+                                                    ACK=pkt.SYN + 1,
+                                                    status=1,
+                                                    hash=0)
+                    handshake_pkt.hash = binascii.crc32(
+                        handshake_pkt.__serialize__()) & 0xffffffff
+                    self.transport.write(handshake_pkt.__serialize__())
+                    self.status = "SYN_SENT"
+                    self.send_buff.append(handshake_pkt.__serialize__())  # @
+                else:
+                    # ERROR: there is no SYN in the handshake packet
+                    self.handshake_send_error()
+            else:
+                # ERROR: not expecting status=2
+                self.handshake_send_error()
+                return
+        elif self.status == "ESTABLISHED":
+            # ERROR: recvive a handshake packet when connect ESTABLISHED
+            logger.debug("recvive a handshake packet when connect ESTABLISHED")
+            return
+        else:
+            # ERROR
+            logger.debug("BUG!")
+            return
+
+    def data_received(self, buffer):
+        logger.debug("{} POOP recv a buffer of size {}".format(
+            self._mode, len(buffer)))
+
+        self.deserializer.update(buffer)
+        for pkt in self.deserializer.nextPackets():
+            pkt_type = pkt.DEFINITION_IDENTIFIER
+            if not pkt_type:  # NOTE: not sure if this is necessary
+                print("{} POOP error: the recv pkt don't have a DEFINITION_IDENTIFIER")
+                return
+            logger.debug("{} POOP the pkt name is: {}".format(
+                self._mode, pkt_type))
+            if pkt_type == "poop.handshakepacket":
+                self.last_recv = time.time()
+                self.handshake_pkt_recv(pkt)
+                continue
+            elif pkt_type == "poop.datapacket":
+                if self.status == 'FIN_SENT':
+                    self.shutdown_ack_recv(pkt)
+                self.last_recv = time.time()
+                self.data_pkt_recv(pkt)
+                continue
+            elif pkt_type == "poop.shutdownpacket":
+                if self.status == 'FIN_SENT':
+                    self.shutdown_ack_recv(pkt)
+                self.last_recv = time.time()
+                self.init_shutdown_pkt_recv(pkt)
+                continue
+            else:
+                print("{} POOP error: the recv pkt name: \"{}\" this is unexpected".format(
+                    self._mode, pkt_type))
+                return
+        print("Not enough data for a packet.")
+
+    async def handshake_timeout_check(self):
         count = 0
         while count < 3:
-            if self.handshake_flag == 1:
-                logger.debug("Have Connected!")
+            # if (time.time() - self.last_recv) > 1:
+            # time out after 10 sec
+            if self.status == "ESTABLISHED" or self.status == "FIN_SENT" or self.status == "DYING":
                 return
-            # Reset the connection
-            new_packet = HandshakePacket()
-            new_packet.SYN = self.CSYN
-            new_packet.status = 0
-            new_packet.hash = 0
-            new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
-            self.transport.write(new_packet.__serialize__())
-            await asyncio.sleep(1)
-            count = count + 1
+            handshake_pkt = HandshakePacket(SYN=self.SYN, status=0, hash=0)
+            handshake_pkt.hash = binascii.crc32(
+                handshake_pkt.__serialize__()) & 0xffffffff
+            self.transport.write(handshake_pkt.__serialize__())
+            count += 1
+            await asyncio.sleep(1)  # - (time.time() - self.last_recv))
 
-    async def check_connection_timeout(self):
-        while True:
-            if (time.time() - self.last_data_time) > 20:
-                # time out after 5 min
-                self.status = 0
-                self.higherProtocol().connection_lost(None)
-                self.transport.close()
-                return
-            await asyncio.sleep(20 - (time.time() - self.last_data_time))
-
-    # --------------------------------------------------------------------------------------------------------
-    def send(self, data):
-        self.send_buffer = self.buffer + data
-        self.send_packets_inqueue()
-
-    def send_packets_inqueue(self):
-        while self.send_buffer and len(
-                self.send_window) <= self.send_window_size and self.next_seq_send < self.next_expected_ack + self.send_window_size:
-            if len(self.send_buffer) >= 15000:
-                new_packet = DataPacket()
-                new_packet.seq = self.next_seq_send
-                new_packet.data = bytes(self.send_buffer[0:15000])
-                new_packet.hash = 0
-                new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
-                # set the send_buffer containing the part of data which larger than 15000
-                self.send_buffer = self.send_buffer[15000:]
-            else:
-                new_packet = DataPacket()
-                new_packet.seq = self.next_seq_send
-                new_packet.data = bytes(self.send_buffer[0:len(self.send_buffer)])
-                new_packet.hash = 0
-                new_packet.hash = binascii.crc32(new_packet.__serialize__()) & 0xffffffff
-                # set the send_buffer to be empty again
-                self.send_buffer = []
-
-            #
-            if self.next_seq_recv == 2 ** 32:
-                self.next_seq_recv = 0
-
-            else:
-                self.next_seq_send = self.next_seq_send + 1
-
-            resend_packet = ResendPacket()
-            resend_packet.seq = new_packet.seq
-            resend_packet.data = new_packet.data
-            resend_packet.hash = new_packet.hash
-            resend_packet.TIMESTAMP = time.time()
-            self.send_window.append(resend_packet)
-            self.transport.write(new_packet.__serialize__())
-
-    async def resend_check(self):
-        while True:
-            current_time = time.time()
-            for resend_packet in self.send_window_:
-                if current_time - resend_packet.TIMESTAMP > 2:
-                    packet = DataPacket()
-                    packet.seq = resend_packet.seq
-                    packet.data = resend_packet.data
-                    packet.hash = resend_packet.hash
-                    self.transport.write(packet.__serialize__())
-                    resend_packet.TIMESTAMP = current_time
-            await asyncio.sleep(0.5)
-
-    def datapacket_recv(self, packet):
-        self.last_data_time = time.time()
-        # Drop if not a datapacket
-        if packet.DEFINITION_IDENTIFIER != "poop.datapacket":
-            logger.debug("Not the expected data packet. Dropped!")
+        # this function is called when the other side initiate a shutdown (received when status == ESTABLISHED)
+    def init_shutdown_pkt_recv(self, pkt):
+        if pkt.DEFINITION_IDENTIFIER != "poop.shutdownpacket":
+            # wrong pkt. Check calling function?
             return
-
-        # If ACK is set, handle ACK
-        if packet.ACK:
-            # Check hash, drop if invalid
-            tmp_packet = DataPacket()
-            tmp_packet.ACK = packet.ack
-            tmp_packet.hash = 0
-            if binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff != packet.hash:
-                logger.debug("The hash doesn't match. Dropped!")
-                return
-            # If ACK matches sequence of a packet in send queue, take off of send queue, and update send queue
-            self.send_window[:] = [send_pkt for send_pkt in self.send_window if send_pkt.seq != packet.ack]
-
-            if self.send_window:
-                self.next_expected_ack = self.send_window[0].seq
-            else:
-                self.next_expected_ack = packet.ACK + 1
-            self.send_packets_inqueue()
+        if not pkt.FIN:
+            # missing fields
+            print("Missing field(s): FIN")
             return
-        # if there is no ack, which means the packets are data packets just received
-        elif packet.seq <= self.next_seq_recv + self.recv_window_size:
-            tmp_packet = DataPacket()
-            tmp_packet.seq = packet.seq
-            tmp_packet.data = packet.data
-            tmp_packet.hash = 0
-            if binascii.crc32(tmp_packet.__serialize__()) & 0xffffffff != packet.hash:
-                logger.debug("The hash doesn't match. Dropped!")
-                return
+        if pkt.FIN != self.recv_next:
+            # missing packets
+            print("Wrong FIN. Missing packets?")
+            return
+        # send (FIN) ACK data packet and shutdown
+        pkt = DataPacket(ACK=pkt.FIN, hash=0)
+        pkt.hash = binascii.crc32(pkt.__serialize__()) & 0xffffffff
+        self.transport.write(pkt.__serialize__())
+        self.transport.close()
+        return
+
+    # this function is called when self already sent a shutdown packet (status == FIN_SENT)
+    def shutdown_ack_recv(self, pkt):
+        if pkt.DEFINITION_IDENTIFIER == "poop.shutdownpacket":
+            # simultaneous shutdown. Shutdown immediately.
+            print("Shutdown due to: Simultaneous shutdown")
+            self.status = 'DYING'
+            self.higherProtocol().connection_lost(None)
+            self.transport.close()
+            return
+        print('Data pkt received while status == FIN_SENT')
+        if pkt.DEFINITION_IDENTIFIER != "poop.datapacket" or self.status != 'FIN_SENT':
+            # wrong pkt or wrong call (should only be called when self.status == 'FIN_SENT').
+            return
+        if pkt.seq or pkt.data:
+            print('Unexpected field(s) in FACK packet.')
+            return
+        pkt_copy = DataPacket(ACK=pkt.ACK, hash=0)
+        if binascii.crc32(pkt_copy.__serialize__()) & 0xffffffff != pkt.hash:
+            print('Wrong hash for FACK pkt, dropping.')
+            return
+        if pkt.ACK == self.FIN:
+            # fin has been ACKed by other agent. Teardown connection.
+            print("Shutdown due to: FIN has been acked.")
+            self.status = 'DYING'
+            self.higherProtocol().connection_lost(None)
+            self.transport.close()
         else:
-            logger.debug("The received sequence number doesn't in the range. Dropped!")
-            return
-        # continue the following when hash matches, send the sequence number of the already acquired packets
-        new_ack_packet = DataPacket()
-        new_ack_packet.ACK = packet.seq
-        new_ack_packet.hash = 0
-        new_ack_packet.hash = binascii.crc32(new_ack_packet.__serialize__()) & 0xffffffff
-        self.transport.write(new_ack_packet.__serialize__())
+            print("missing ACK field or wrong ACK number.")
+            if pkt.ACK:
+                print("Pkt type: {} Pkt has ACK={} while protocol has {}".format(
+                    pkt.DEFINITION_IDENTIFIER, pkt.ACK, self.FIN))
+        return
 
-        # add the coming packet into the window and sort
-        self.recv_window.append(packet)
-        self.recv_window.sort(key=lambda packet_: packet_.seq)
-
-        # send the received packets to the higher application layer
-        while self.recv_window:
-            if self.recv_window[0].seq == self.next_seq_recv:
-                self.higherProtocol().data_received(self.recv_window.pop(0).data)
-                # while self.recv_window:
-                #     if self.recv_window[0].seq == self.next_seq_recv:
-                #         self.recv_window.pop(0)
-                #     else:
-                #         break
-                # when the received sequence number is outer bound, reset to 0
-                if self.next_seq_recv == 2 ** 32:
-                    self.next_seq_recv = 0
-                else:
-                    self.next_seq_recv = self.next_seq_recv + 1
-            else:
-                logger.debug("There may be error??")
-                break
-
-    # --------------------------------------------------------------------------------------------------------
-    def shut(self):
-        self.send_shutdown_packet()
-
-    def send_shutdown_packet(self):
-        new_shut_packet = self.transport.write()
-        new_shut_packet.FIN = self.next_seq_recv
-        self.transport.write(new_shut_packet.__serialize__())
-        self.shutdown_time = time.time()
-        self.loop.create_task(self.check_shutdown_timeout())
+    # initiate a shutdown by sending the shutdownpacket
+    def send_shutdown_pkt(self):
+        print('sending shutdown pkt.')
+        self.FIN = self.send_next
+        pkt = ShutdownPacket(FIN=self.FIN, hash=0)
+        pkt.hash = binascii.crc32(pkt.__serialize__()) & 0xffffffff
+        self.transport.write(pkt.__serialize__())
+        self.loop.create_task(self.shutdown_timeout_check())
         self.status = 'FIN_SENT'
         return
 
-    async def check_shutdown_timeout(self):
-        while True:
-            if self.check_shutdown_count < 2:
-                if (time.time() - self.shutdown_time) > 5:
-                    self.send_shutdown_packet()
-                    self.check_shutdown_count = self.check_shutdown_count + 1
+    async def shutdown_timeout_check(self):
+        count = 0
+        while count < 2:
+            await asyncio.sleep(30)
+            if self.status != 'DYING':
+                print('Timeout. Resending shutdown pkt.')
+                pkt = ShutdownPacket(FIN=self.send_next, hash=0)
+                pkt.hash = binascii.crc32(pkt.__serialize__()) & 0xffffffff
+                self.transport.write(pkt.__serialize__())
+                count += 1
             else:
-                logger.debug("Shut down time outer bound!")
-                self.transport.close()
-            await asyncio.sleep(5 - (time.time() - self.shutdown_time))
-
-    def shutdown_recv(self, packet):
-        if not packet.FIN:
-            return
-        if packet.FIN == self.next_seq_recv:
-            Fack_packet = ShutdownPacket()
-            Fack_packet.Fack = packet.FIN
-            self.transport.write(Fack_packet.__serialize__())
+                return
+        if self.status != 'DYING':
+            print("Shutdown due to: timeout.")
+            self.status = 'DYING'
+            self.higherProtocol().connection_lost(None)
             self.transport.close()
+        return
 
+    async def shutdown_send_wait(self):
+        # this either send shutdown after all ack received or destroyed by connection_timeout
+        print("The same error again")
+        while True:
+            await asyncio.sleep(1)
+            if not self.send_packet:
+                self.send_shutdown_pkt()
+                return
+            elif self.status != 'ESTABLISHED':
+                return
 
-# from playground.network.common import StackingProtocolFactory
-#
-# PassthroughFactory = StackingProtocolFactory.CreateFactoryType(PassthroughProtocol)
-# factory1 = PassthroughFactory()
+    def connection_lost(self, exc):
+        logger.debug(
+            "{} passthrough connection lost. Shutting down higher layer.".
+            format(self._mode))
+        self.higherProtocol().connection_lost(exc)
+
+    async def connection_timeout_check(self):
+        while True:
+            if (time.time() - self.last_recv) > 300:
+                # time out after 5 min
+                print("Shutdown due to: connection timeout")
+                self.status = "DYING"
+                self.higherProtocol().connection_lost(None)
+                self.transport.close()
+                return
+            await asyncio.sleep(300 - (time.time() - self.last_recv))
+
+    async def wait_ack_timeout(self):
+        while self.status == "ESTABLISHED":
+            await asyncio.sleep(2)
+            if self.send_packet:
+                try:
+                    print(self.send_packet)
+                    self.transport.write(self.send_packet.__serialize__())
+                except Exception as error:
+                    print(error)
+
+    def data_pkt_recv(self, pkt):
+        # Drop if not a datapacket
+        if pkt.DEFINITION_IDENTIFIER != "poop.datapacket":
+            return
+
+        # If ACK is set, handle ACK
+        if pkt.ACK:
+            if pkt.seq or pkt.data:
+                return 
+            # Check hash, drop if invalid
+            pkt_copy = DataPacket(ACK=pkt.ACK, hash=0)
+            if binascii.crc32(
+                    pkt_copy.__serialize__()) & 0xffffffff != pkt.hash:
+                print("Wrong hash in ACK")
+                return
+            # If ACK matches seq of a pkt in send queue, take off of send queue, and update send queue
+            if pkt.ACK == self.send_packet.seq:
+                self.send_packet = None
+                self.queue_send_pkts()
+                print("IN: ACK=" + str(pkt.ACK))
+
+            else:
+                logger.debug("IN: ACK="+str(pkt.ACK))
+            return         
+
+        if pkt.seq <= self.recv_next + self.recv_wind_size:
+            pkt_copy = DataPacket(seq=pkt.seq, data=pkt.data, hash=0)
+            if binascii.crc32(
+                    pkt_copy.__serialize__()) & 0xffffffff != pkt.hash:
+                return
+        else:
+            return
+
+        print("IN: SEQ=" + str(pkt.seq))
+
+        ack_pkt = DataPacket(ACK=pkt.seq, hash=0)
+        ack_pkt.hash = binascii.crc32(ack_pkt.__serialize__()) & 0xffffffff
+        self.transport.write(ack_pkt.__serialize__())
+        print("OUT: ACK=" + str(ack_pkt.ACK))
+
+        if pkt.seq < self.recv_next:
+            return
+
+        self.recv_queue.append(pkt)
+        self.recv_queue.sort(key=lambda pkt_: pkt_.seq)
+
+        while self.recv_queue:
+            if self.recv_queue[0].seq == self.recv_next:
+                self.higherProtocol().data_received(
+                    self.recv_queue.pop(0).data)
+                while self.recv_queue:
+                    if self.recv_queue[0].seq == self.recv_next:
+                        self.recv_queue.pop(0)
+                    else:
+                        break
+                if self.recv_next == 2**32:
+                    self.recv_next = 0
+                else:
+                    self.recv_next += 1
+            else:
+                break
+        '''
+        # MIGHT BE UNNECESSARY
+        for pkt in self.recv_queue:
+            if pkt.seq < self.recv_next:
+                del(pkt)
+        '''
+
+    def send_data(self, data):
+        self.send_buff += data
+        self.queue_send_pkts()
+
+    def init_close(self):
+        # kill higher protocol
+        print('Higher protocol called init_close(). Killing higher protocol.')
+        self.higherProtocol().connection_lost(None)
+        if not self.send_packet:
+           print("Ball Ball YOU")
+           self.send_shutdown_pkt()
+        else:
+           print(self.send_packet)
+           self.loop.create_task(self.shutdown_send_wait())
+
+    def queue_send_pkts(self):
+        while self.send_buff and not self.send_packet:
+            if len(self.send_buff) >= 15000:
+                pkt = DataPacket(seq=self.send_next,
+                                 data=bytes(self.send_buff[0:15000]),
+                                 hash=0)
+                pkt.hash = binascii.crc32(pkt.__serialize__()) & 0xffffffff
+                self.send_buff = self.send_buff[15000:]
+            else:
+                pkt = DataPacket(seq=self.send_next,
+                                 data=bytes(
+                                     self.send_buff[0:len(self.send_buff)]),
+                                 hash=0)
+                pkt.hash = binascii.crc32(pkt.__serialize__()) & 0xffffffff
+                self.send_buff = []
+            if self.recv_next == 2**32:
+                self.recv_next = 0
+            else:
+                self.send_next += 1
+
+            #self.send_queue.append(pkt)
+            self.send_packet = pkt
+            self.send_packet_time = time.time()
+            self.transport.write(pkt.__serialize__())
+            print("OUT: SEQ=" + str(pkt.seq))
+            # self.loop.create_task(self.wait_ack_timeout(pkt))
+
 
 PassthroughClientFactory = StackingProtocolFactory.CreateFactoryType(
-    lambda: POOPProtocol(mode="client")
-)
+    lambda: POOP(mode="client"))
 
 PassthroughServerFactory = StackingProtocolFactory.CreateFactoryType(
-    lambda: POOPProtocol(mode="server")
-)
+    lambda: POOP(mode="server"))
+
