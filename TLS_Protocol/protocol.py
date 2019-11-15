@@ -130,12 +130,17 @@ class CRAP(StackingProtocol):
             if not pkt_type:  # NOTE: not sure if this is necessary
                 print("{} Crap error: the recv pkt don't have a DEFINITION_IDENTIFIER")
                 return
-            logger.debug("{} POOP the pkt name is: {}".format(self.mode, pkt_type))
-            if pkt_type == "carp.handshakepacket":
+            logger.debug("{} Crap the pkt name is: {}".format(self.mode, pkt_type))
+            if pkt_type == "crap.handshakepacket":
                 self.crap_handshake_recv(pkt)
                 continue
+            else:
+                print("{} Crap error: the recv pkt name: \"{}\" this is unexpected".format(
+                    self.mode, pkt_type))
+                return
 
     def crap_handshake_recv(self, packet):
+        print("shoudaole！！！！！！！！！！！！")
         if self.mode == "server":
             if packet.status == 0:
                 try:
