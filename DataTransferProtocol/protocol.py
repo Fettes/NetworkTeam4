@@ -476,7 +476,7 @@ class POOP(StackingProtocol):
 
         self.recv_queue.append(pkt)
         self.recv_queue.sort(key=lambda pkt_: pkt_.seq)
-
+        print(isinstance(pkt.data, bytes))
         while self.recv_queue:
             if self.recv_queue[0].seq == self.recv_next:
                 self.higherProtocol().data_received(
