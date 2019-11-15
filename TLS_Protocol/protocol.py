@@ -69,6 +69,7 @@ class CRAP(StackingProtocol):
         self.dataA = None
         self.dataB = None
         self.mode = mode
+        self.deserializer = CrapPacketType.Deserializer()
 
     def connection_made(self, transport):
         logger.debug("{} Crap: connection made".format(self.mode))
