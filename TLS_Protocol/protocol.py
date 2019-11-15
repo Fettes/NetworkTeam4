@@ -2,6 +2,7 @@ from ..poop.protocol import POOP
 from uuid import UUID
 from playground.network.common import StackingProtocolFactory, StackingProtocol, StackingTransport
 import logging
+import datetime
 import time
 import asyncio
 from random import randrange
@@ -17,6 +18,8 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.hazmat.primitives.serialization import PublicFormat
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
+from cryptography import x509
+from cryptography.x509.oid import NameOID
 
 import binascii
 import bisect
@@ -72,28 +75,48 @@ class CRAP(StackingProtocol):
         self.transport = transport
 
         if self.mode == "client":
+            # Create long term key
             self.privkA = ec.generate_private_key(ec.SECP384R1(), default_backend())
             pubkA = self.privkA.public_key()
 
+            # Create pk in packet (serialization)
+            tmp_pubkA = pubkA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
+            self.dataA = tmp_pubkA
+
+            # Create ephemeral key for signing
             self.signkA = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
             self.pubk_sigA = self.signkA.public_key()
 
-            tmp_pubk_sigA = self.pubk_sigA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
-            certA = tmp_pubk_sigA
-
-            tmpA = pubkA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
-            self.dataA = tmpA
-
-            # sigA = signkA.sign(data,ec.ECDSA(hashes.SHA256()))
+            # Create signature
             sigA = self.signkA.sign(self.dataA,
                                     padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
                                     hashes.SHA256())
 
+            # Create nonceA
             tmp_nonceA = 1
-            self.nonceA = bytes(tmp_nonceA)
+            self.nonceA = tmp_nonceA
 
-            print(self.nonceA)
-            new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=tmp_nonceA, cert=certA)
+            # Create certificate with the help of ephemeral private key
+            subject = issuer = x509.Name([
+                x509.NameAttribute(NameOID.COUNTRY_NAME, u"US"),
+                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Baltimore"),
+                # x509.NameAttribute(NameOID.LOCALITY_NAME, u"San Francisco"),
+                x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"JHU"),
+                x509.NameAttribute(NameOID.COMMON_NAME, u"20194networksecurity.com"),
+            ])
+            builder = x509.CertificateBuilder()
+            builder = builder.subject_name(subject)
+            builder = builder.issuer_name(issuer)
+            builder = builder.public_key(self.pubk_sigA)
+            builder = builder.serial_number(x509.random_serial_number())
+            builder = builder.not_valid_before(datetime.datetime.utcnow())
+            builder = builder.not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=30))
+            certificate = builder.sign(private_key=self.signkA, algorithm=hashes.SHA256(), backend=default_backend())
+            # Create CertA to transmit (serialization)
+            certA = certificate.public_bytes(Encoding.PEM)
+            print(certA)
+
+            new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=self.nonceA, cert=certA)
 
             self.transport.write(new_secure_packet.__serialize__())
 
@@ -160,9 +183,9 @@ class CRAP(StackingProtocol):
             elif packet.status == 1:
                 try:
                     self.pubk_sigA.verify(packet.nonceSignature, self.nonceA,
-                                       padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
-                                                   salt_length=padding.PSS.MAX_LENGTH),
-                                       hashes.SHA256())
+                                          padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                      salt_length=padding.PSS.MAX_LENGTH),
+                                          hashes.SHA256())
 
                 except Exception as error:
                     logger.debug("Sever verify failed because wrong signature")
@@ -198,6 +221,8 @@ class CRAP(StackingProtocol):
             self.transport.write(new_secure_packet.__serialize__())
 
 
-SecureClientFactory = StackingProtocolFactory.CreateFactoryType(lambda: POOP(mode="client"), lambda: CRAP(mode="client"))
+SecureClientFactory = StackingProtocolFactory.CreateFactoryType(lambda: POOP(mode="client"),
+                                                                lambda: CRAP(mode="client"))
 
-SecureServerFactory = StackingProtocolFactory.CreateFactoryType(lambda: POOP(mode="server"), lambda: CRAP(mode="server"))
+SecureServerFactory = StackingProtocolFactory.CreateFactoryType(lambda: POOP(mode="server"),
+                                                                lambda: CRAP(mode="server"))
