@@ -118,7 +118,6 @@ class CRAP(StackingProtocol):
             print(certA)
 
             new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=self.nonceA, cert=certA)
-
             self.transport.write(new_secure_packet.__serialize__())
 
     def data_received(self, buffer):

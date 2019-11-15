@@ -95,6 +95,7 @@ class POOP(StackingProtocol):
         self.recv_wind_size = 10
         self.recv_next = None
         self.send_buff = []
+        self.send_data_buff = None
         self.send_packet = None
         self.send_packet_time = 0
         self.send_queue = []
@@ -499,7 +500,7 @@ class POOP(StackingProtocol):
         '''
 
     def send_data(self, data):
-        self.send_buff += data
+        self.send_data_buff += data
         self.queue_send_pkts()
 
     def init_close(self):
@@ -514,26 +515,24 @@ class POOP(StackingProtocol):
            self.loop.create_task(self.shutdown_send_wait())
 
     def queue_send_pkts(self):
-        while self.send_buff and not self.send_packet:
-            if len(self.send_buff) >= 15000:
+        while self.send_data_buff and not self.send_packet:
+            if len(self.send_data_buff) >= 15000:
                 pkt = DataPacket(seq=self.send_next,
-                                 data=bytes(self.send_buff[0:15000]),
+                                 data=self.send_data_buff[0:15000],
                                  hash=0)
                 pkt.hash = binascii.crc32(pkt.__serialize__()) & 0xffffffff
-                self.send_buff = self.send_buff[15000:]
+                self.send_data_buff = self.send_data_buff[15000:]
             else:
                 pkt = DataPacket(seq=self.send_next,
-                                 data=bytes(
-                                     self.send_buff[0:len(self.send_buff)]),
+                                 data=self.send_data_buff[0:len(self.send_data_buff)],
                                  hash=0)
                 pkt.hash = binascii.crc32(pkt.__serialize__()) & 0xffffffff
-                self.send_buff = []
+                self.send_data_buff = []
             if self.recv_next == 2**32:
                 self.recv_next = 0
             else:
                 self.send_next += 1
 
-            #self.send_queue.append(pkt)
             self.send_packet = pkt
             self.send_packet_time = time.time()
             self.transport.write(pkt.__serialize__())
