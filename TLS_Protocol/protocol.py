@@ -84,6 +84,7 @@ class CRAP(StackingProtocol):
             sigA = self.signkA.sign(self.dataA,
                                     padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
                                     hashes.SHA256())
+
             tmp_nonceA = UUID.randomUUID().toString().replace("-", "")
             self.nonceA = bytes(str(tmp_nonceA))
 
