@@ -67,10 +67,10 @@ class CRAP(StackingProtocol):
         self.mode = mode
 
     def connection_made(self, transport):
-        logger.debug("{} Crap: connection made".format(self._mode))
+        logger.debug("{} Crap: connection made".format(self.mode))
         self.transport = transport
 
-        if self._mode == "client":
+        if self.mode == "client":
             self.privkA = ec.generate_private_key(ec.SECP384R1(), default_backend())
             pubkA = self.privkA.public_key()
 
@@ -95,7 +95,7 @@ class CRAP(StackingProtocol):
             self.transport.write(new_secure_packet.__serialize__())
 
     def data_received(self, buffer):
-        logger.debug("{} Crap recv a buffer of size {}".format(self._mode, len(buffer)))
+        logger.debug("{} Crap recv a buffer of size {}".format(self.mode, len(buffer)))
 
         self.deserializer.update(buffer)
         for pkt in self.deserializer.nextPackets():
@@ -103,13 +103,13 @@ class CRAP(StackingProtocol):
             if not pkt_type:  # NOTE: not sure if this is necessary
                 print("{} Crap error: the recv pkt don't have a DEFINITION_IDENTIFIER")
                 return
-            logger.debug("{} POOP the pkt name is: {}".format(self._mode, pkt_type))
+            logger.debug("{} POOP the pkt name is: {}".format(self.mode, pkt_type))
             if pkt_type == "carp.handshakepacket":
                 self.crap_handshake_recv(pkt)
                 continue
 
     def crap_handshake_recv(self, packet):
-        if self._mode == "server":
+        if self.mode == "server":
             if packet.status == 0:
                 try:
                     packet.cert.verify(packet.signature, self.dataA,
@@ -166,7 +166,7 @@ class CRAP(StackingProtocol):
                     self.transport.close()
                 print("Handshake complete")
 
-        if self._mode == "client" and packet.status == 1:
+        if self.mode == "client" and packet.status == 1:
             try:
                 packet.cert.verify(packet.signature, self.dataB,
                                    padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
