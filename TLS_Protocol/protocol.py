@@ -78,7 +78,9 @@ class CRAP(StackingProtocol):
             self.signkA = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
             self.pubk_sigA = self.signkA.public_key()
 
-            certA = self.pubk_sigA
+            tmp_pubk_sigA = self.pubk_sigA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
+            certA = tmp_pubk_sigA
+
             tmpA = pubkA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
             self.dataA = tmpA
 
@@ -91,7 +93,7 @@ class CRAP(StackingProtocol):
             self.nonceA = bytes(tmp_nonceA)
 
             print(self.nonceA)
-            new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=tmp_nonceA, cert=certA)
+            new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=self.nonceA, cert=certA)
 
             self.transport.write(new_secure_packet.__serialize__())
 
@@ -132,7 +134,9 @@ class CRAP(StackingProtocol):
                 signkB = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
                 pubk_sigB = signkB.public_key()
 
-                certB = pubk_sigB
+                tmp_pubk_sigB = pubk_sigB.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
+                certB = tmp_pubk_sigB
+
                 tmpB = pubkB.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
                 self.dataB = tmpB
 
@@ -148,7 +152,7 @@ class CRAP(StackingProtocol):
                 tmp_nonceB = 4
                 nonceB = bytes(tmp_nonceB)
 
-                new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=tmp_nonceB,
+                new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=nonceB,
                                                     nonceSignature=nonceSignatureB, cert=certB)
 
                 self.transport.write(new_secure_packet.__serialize__())
