@@ -115,15 +115,14 @@ class CRAP(StackingProtocol):
             certificate = builder.sign(private_key=self.signkA, algorithm=hashes.SHA256(), backend=default_backend())
             # Create CertA to transmit (serialization)
             certA = certificate.public_bytes(Encoding.PEM)
-            print(certA)
 
             new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=self.nonceA, cert=certA)
             self.transport.write(new_secure_packet.__serialize__())
 
     def data_received(self, buffer):
         logger.debug("{} Crap recv a buffer of size {}".format(self.mode, len(buffer)))
-
         self.deserializer.update(buffer)
+
         for pkt in self.deserializer.nextPackets():
             pkt_type = pkt.DEFINITION_IDENTIFIER
             if not pkt_type:  # NOTE: not sure if this is necessary
@@ -139,14 +138,14 @@ class CRAP(StackingProtocol):
                 return
 
     def crap_handshake_recv(self, packet):
-        print("shoudaole！！！！！！！！！！！！")
         if self.mode == "server":
             if packet.status == 0:
+                certification = x509.load_pem_x509_certificate(packet.cert, default_backend())
+                extract_pubkA = certification.public_key()
                 try:
-                    packet.cert.verify(packet.signature, self.dataA,
-                                       padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
-                                                   salt_length=padding.PSS.MAX_LENGTH),
-                                       hashes.SHA256())
+                    extract_pubkA.verify(packet.signature, self.dataA,
+                                         padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                     salt_length=padding.PSS.MAX_LENGTH), hashes.SHA256())
                 except Exception as error:
                     logger.debug("Sever verify failed because wrong signature")
                     new_secure_packet = HandshakePacket(status=2)
