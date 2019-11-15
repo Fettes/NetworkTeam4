@@ -1,3 +1,4 @@
+from uuid import UUID
 from playground.network.common import StackingProtocolFactory, StackingProtocol, StackingTransport
 import logging
 import time
@@ -12,6 +13,8 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.serialization import Encoding
+from cryptography.hazmat.primitives.serialization import PublicFormat
 
 import binascii
 import bisect
@@ -39,7 +42,7 @@ class HandshakePacket(CrapPacketType):
         ("nonceSignature", BUFFER({Optional: True})),
         ("signature", BUFFER({Optional: True})),
         ("pk", BUFFER({Optional: True})),
-        ("cert", BUFFER({Optional:True}))
+        ("cert", BUFFER({Optional: True}))
     ]
 
 
@@ -70,15 +73,22 @@ class CRAP(StackingProtocol):
             self.privkA = ec.generate_private_key(ec.SECP384R1(), default_backend())
             pubkA = self.privkA.public_key()
 
-            signkA = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
-            pubk_sigA = signkA.public_key()
+            self.signkA = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
+            self.pubk_sigA = self.signkA.public_key()
 
-            certA = pubk_sigA
-            self.dataA = pubkA
+            certA = self.pubk_sigA
+            tmpA = pubkA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
+            self.dataA = tmpA
 
             # sigA = signkA.sign(data,ec.ECDSA(hashes.SHA256()))
-            sigA = signkA.sign(self.dataA, padding.PSS(mgf = padding.MGF1(hashes.SHA256()),salt_length = padding.PSS.MAX_LENGTH),hashes.SHA256())
-            new_secure_packet = HandshakePacket(status=0, pk=pubkA, signature=sigA, cert=certA)
+            sigA = self.signkA.sign(self.dataA,
+                                    padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+                                    hashes.SHA256())
+            tmp_nonceA = UUID.randomUUID().toString().replace("-", "")
+            self.nonceA = bytes(str(tmp_nonceA))
+
+            print(self.nonceA)
+            new_secure_packet = HandshakePacket(status=0, pk=pubkA, signature=sigA, nonce=self.nonceA, cert=certA)
 
             self.transport.write(new_secure_packet.__serialize__())
 
@@ -97,33 +107,69 @@ class CRAP(StackingProtocol):
                 continue
 
     def crap_handshake_recv(self, packet):
-        if self._mode == "server" and packet.status == 0:
+        if self._mode == "server":
+            if packet.status == 0:
+                try:
+                    packet.cert.verify(packet.signature, self.dataA,
+                                       padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                   salt_length=padding.PSS.MAX_LENGTH),
+                                       hashes.SHA256())
+                except Exception as error:
+                    logger.debug("Sever verify failed because wrong signature")
+                    new_secure_packet = HandshakePacket(status=2)
+                    self.transport.write(new_secure_packet.__serialize__())
+                    self.transport.close()
 
-            try:
-                packet.cert.verify(packet.signature, self.dataA, padding.PSS(mgf=padding.MGF1(hashes.SHA256()),salt_length=padding.PSS.MAX_LENGTH),hashes.SHA256())
-            except Exception as error:
-                logger.debug("Sever verify failed because wrong signature")
-                new_secure_packet = HandshakePacket(status=2)
+                privkB = ec.generate_private_key(ec.SECP384R1(), default_backend())
+                pubkB = privkB.public_key()
+                server_shared_key = privkB.exchange(ec.ECDH, packet.pk)
+
+                signkB = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
+                pubk_sigB = signkB.public_key()
+
+                certB = pubk_sigB
+                tmpB = pubkB.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
+                self.dataB = tmpB
+
+                sigB = signkB.sign(self.dataB,
+                                   padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+                                   hashes.SHA256())
+
+                nonceSignatureB = signkB.sign(packet.nonce,
+                                              padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                          salt_length=padding.PSS.MAX_LENGTH),
+                                              hashes.SHA256())
+
+                tmp_nonceB = UUID.randomUUID().toString().replace("-", "")
+                nonceB = bytes(str(tmp_nonceB))
+
+                new_secure_packet = HandshakePacket(status=1, pk=pubkB, signature=sigB, nonce=nonceB,
+                                                    nonceSignature=nonceSignatureB, cert=certB)
+
                 self.transport.write(new_secure_packet.__serialize__())
-                self.transport.close()
 
-            privkB = ec.generate_private_key(ec.SECP384R1(), default_backend())
-            pubkB = privkB.public_key()
-            server_shared_key = privkB.exchange(ec.ECDH, packet.pk)
+            elif packet.status == 1:
+                try:
+                    self.pubk_sigA.verify(packet.nonceSignature, self.nonceA,
+                                       padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                   salt_length=padding.PSS.MAX_LENGTH),
+                                       hashes.SHA256())
 
-            signkB = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
-            pubk_sigB = signkB.public_key()
-
-            certB = pubk_sigB
-            self.dataB = pubkB
-            sigB = signkB.sign(self.dataB, padding.PSS(mgf = padding.MGF1(hashes.SHA256()),salt_length = padding.PSS.MAX_LENGTH),hashes.SHA256())
-
-            new_secure_packet = HandshakePacket(status=1, pk=pubkB, signature=sigB, cert=certB)
-            self.transport.write(new_secure_packet.__serialize__())
+                except Exception as error:
+                    logger.debug("Sever verify failed because wrong signature")
+                    new_secure_packet = HandshakePacket(status=2)
+                    self.transport.write(new_secure_packet.__serialize__())
+                    self.transport.close()
+                print("Handshake complete")
 
         if self._mode == "client" and packet.status == 1:
             try:
-                packet.cert.verify(packet.signature, self.dataB, padding.PSS(mgf=padding.MGF1(hashes.SHA256()),salt_length=padding.PSS.MAX_LENGTH),hashes.SHA256())
+                packet.cert.verify(packet.signature, self.dataB,
+                                   padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+                                   hashes.SHA256())
+                packet.cert.verify(packet.nonceSignature, self.nonceA,
+                                   padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+                                   hashes.SHA256())
 
             except Exception as error:
                 logger.debug("Sever verify failed because wrong signature")
@@ -132,11 +178,16 @@ class CRAP(StackingProtocol):
                 self.transport.close()
 
             client_shared_key = self.privkA.exchange(ec.ECDH, packet.pk)
-            new_secure_packet = HandshakePacket(status=1)
+
+            nonceSignatureA = self.signkA.sign(packet.nonce,
+                                               padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                           salt_length=padding.PSS.MAX_LENGTH),
+                                               hashes.SHA256())
+
+            new_secure_packet = HandshakePacket(status=1, nonceSignature=nonceSignatureA)
             self.transport.write(new_secure_packet.__serialize__())
 
 
-SecureClientFactory = StackingProtocolFactory.CreateFactoryType(lambda: CRAP(mode="client"),)
+SecureClientFactory = StackingProtocolFactory.CreateFactoryType(lambda: CRAP(mode="client"))
 
 SecureServerFactory = StackingProtocolFactory.CreateFactoryType(lambda: CRAP(mode="server"))
-
