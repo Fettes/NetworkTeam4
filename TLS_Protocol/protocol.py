@@ -1,3 +1,4 @@
+from ..poop.protocol import POOP
 from uuid import UUID
 from playground.network.common import StackingProtocolFactory, StackingProtocol, StackingTransport
 import logging
@@ -86,7 +87,7 @@ class CRAP(StackingProtocol):
                                     padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
                                     hashes.SHA256())
 
-            tmp_nonceA = UUID.randomUUID().toString().replace("-", "")
+            tmp_nonceA = "abcdabcdabcdabcduijkuijkuijkuijk"
             self.nonceA = bytes(str(tmp_nonceA))
 
             print(self.nonceA)
@@ -144,7 +145,7 @@ class CRAP(StackingProtocol):
                                                           salt_length=padding.PSS.MAX_LENGTH),
                                               hashes.SHA256())
 
-                tmp_nonceB = UUID.randomUUID().toString().replace("-", "")
+                tmp_nonceB = "abcdabcdabcdabcduijkuijkuijkuijk"
                 nonceB = bytes(str(tmp_nonceB))
 
                 new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=nonceB,
