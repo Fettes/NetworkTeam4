@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.hazmat.primitives.serialization import PublicFormat
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
 import binascii
 import bisect
@@ -89,7 +90,7 @@ class CRAP(StackingProtocol):
             self.nonceA = bytes(str(tmp_nonceA))
 
             print(self.nonceA)
-            new_secure_packet = HandshakePacket(status=0, pk=pubkA, signature=sigA, nonce=self.nonceA, cert=certA)
+            new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=self.nonceA, cert=certA)
 
             self.transport.write(new_secure_packet.__serialize__())
 
@@ -123,7 +124,9 @@ class CRAP(StackingProtocol):
 
                 privkB = ec.generate_private_key(ec.SECP384R1(), default_backend())
                 pubkB = privkB.public_key()
-                server_shared_key = privkB.exchange(ec.ECDH, packet.pk)
+
+                publickeyB = load_pem_private_key(packet.pk, password=None, backend=default_backend())
+                server_shared_key = privkB.exchange(ec.ECDH, publickeyB)
 
                 signkB = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
                 pubk_sigB = signkB.public_key()
@@ -144,7 +147,7 @@ class CRAP(StackingProtocol):
                 tmp_nonceB = UUID.randomUUID().toString().replace("-", "")
                 nonceB = bytes(str(tmp_nonceB))
 
-                new_secure_packet = HandshakePacket(status=1, pk=pubkB, signature=sigB, nonce=nonceB,
+                new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=nonceB,
                                                     nonceSignature=nonceSignatureB, cert=certB)
 
                 self.transport.write(new_secure_packet.__serialize__())
@@ -178,7 +181,8 @@ class CRAP(StackingProtocol):
                 self.transport.write(new_secure_packet.__serialize__())
                 self.transport.close()
 
-            client_shared_key = self.privkA.exchange(ec.ECDH, packet.pk)
+            publickeyA = load_pem_private_key(packet.pk, password=None, backend=default_backend())
+            client_shared_key = self.privkA.exchange(ec.ECDH, publickeyA)
 
             nonceSignatureA = self.signkA.sign(packet.nonce,
                                                padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
@@ -189,6 +193,6 @@ class CRAP(StackingProtocol):
             self.transport.write(new_secure_packet.__serialize__())
 
 
-SecureClientFactory = StackingProtocolFactory.CreateFactoryType(lambda: CRAP(mode="client"))
+SecureClientFactory = StackingProtocolFactory.CreateFactoryType(lambda: POOP(mode="client"), lambda: CRAP(mode="client"))
 
-SecureServerFactory = StackingProtocolFactory.CreateFactoryType(lambda: CRAP(mode="server"))
+SecureServerFactory = StackingProtocolFactory.CreateFactoryType(lambda: POOP(mode="server"), lambda: CRAP(mode="server"))
