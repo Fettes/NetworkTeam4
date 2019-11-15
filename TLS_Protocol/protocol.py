@@ -93,7 +93,7 @@ class CRAP(StackingProtocol):
             self.nonceA = bytes(tmp_nonceA)
 
             print(self.nonceA)
-            new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=self.nonceA, cert=certA)
+            new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=tmp_nonceA, cert=certA)
 
             self.transport.write(new_secure_packet.__serialize__())
 
@@ -152,7 +152,7 @@ class CRAP(StackingProtocol):
                 tmp_nonceB = 4
                 nonceB = bytes(tmp_nonceB)
 
-                new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=nonceB,
+                new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=tmp_nonceB,
                                                     nonceSignature=nonceSignatureB, cert=certB)
 
                 self.transport.write(new_secure_packet.__serialize__())
