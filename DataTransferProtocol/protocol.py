@@ -95,7 +95,7 @@ class POOP(StackingProtocol):
         self.recv_wind_size = 10
         self.recv_next = None
         self.send_buff = []
-        self.send_data_buff = None
+        self.send_data_buff = b""
         self.send_packet = None
         self.send_packet_time = 0
         self.send_queue = []
@@ -279,6 +279,7 @@ class POOP(StackingProtocol):
                 self.handshake_pkt_recv(pkt)
                 continue
             elif pkt_type == "poop.datapacket":
+                print(pkt.data)
                 if self.status == 'FIN_SENT':
                     self.shutdown_ack_recv(pkt)
                 self.last_recv = time.time()
@@ -517,6 +518,8 @@ class POOP(StackingProtocol):
     def queue_send_pkts(self):
         while self.send_data_buff and not self.send_packet:
             if len(self.send_data_buff) >= 15000:
+                result = isinstance(self.send_data_buff[0:15000],bytes)
+                print(result)
                 pkt = DataPacket(seq=self.send_next,
                                  data=self.send_data_buff[0:15000],
                                  hash=0)
@@ -527,7 +530,7 @@ class POOP(StackingProtocol):
                                  data=self.send_data_buff[0:len(self.send_data_buff)],
                                  hash=0)
                 pkt.hash = binascii.crc32(pkt.__serialize__()) & 0xffffffff
-                self.send_data_buff = []
+                self.send_data_buff = b""
             if self.recv_next == 2**32:
                 self.recv_next = 0
             else:
