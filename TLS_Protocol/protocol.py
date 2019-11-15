@@ -76,7 +76,7 @@ class CRAP(StackingProtocol):
         self.transport = transport
 
         if self.mode == "client":
-            # Create long term key
+            # Create Client long term key
             self.privkA = ec.generate_private_key(ec.SECP384R1(), default_backend())
             pubkA = self.privkA.public_key()
 
@@ -146,14 +146,18 @@ class CRAP(StackingProtocol):
                     extract_pubkA.verify(packet.signature, self.dataA,
                                          padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                                      salt_length=padding.PSS.MAX_LENGTH), hashes.SHA256())
+
                 except Exception as error:
                     logger.debug("Sever verify failed because wrong signature")
                     new_secure_packet = HandshakePacket(status=2)
                     self.transport.write(new_secure_packet.__serialize__())
                     self.transport.close()
 
+                print("jinlaila!!!!!!!!!!!!!!")
+                # Create Server long term key
                 privkB = ec.generate_private_key(ec.SECP384R1(), default_backend())
                 pubkB = privkB.public_key()
+
 
                 publickeyB = load_pem_private_key(packet.pk, password=None, backend=default_backend())
                 server_shared_key = privkB.exchange(ec.ECDH, publickeyB)
