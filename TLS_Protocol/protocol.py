@@ -87,7 +87,7 @@ class CRAP(StackingProtocol):
                                     padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
                                     hashes.SHA256())
 
-            tmp_nonceA = "12345678912345678912345678912345"
+            tmp_nonceA = 12345678912345678912345678912345
             self.nonceA = bytes(tmp_nonceA)
 
             print(self.nonceA)
@@ -145,7 +145,7 @@ class CRAP(StackingProtocol):
                                                           salt_length=padding.PSS.MAX_LENGTH),
                                               hashes.SHA256())
 
-                tmp_nonceB = "12345678912345678912345678912345"
+                tmp_nonceB = 12345678912345678912345678912345
                 nonceB = bytes(tmp_nonceB)
 
                 new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=nonceB,
