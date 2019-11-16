@@ -103,7 +103,7 @@ class CRAP(StackingProtocol):
                 x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Baltimore"),
                 # x509.NameAttribute(NameOID.LOCALITY_NAME, u"San Francisco"),
                 x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"JHU"),
-                x509.NameAttribute(NameOID.COMMON_NAME, u"20194networksecurity.com"),
+                x509.NameAttribute(NameOID.COMMON_NAME, u"20194networksecurityclient.com"),
             ])
             builder = x509.CertificateBuilder()
             builder = builder.subject_name(subject)
@@ -141,11 +141,11 @@ class CRAP(StackingProtocol):
         if self.mode == "server":
             if packet.status == 0:
                 certification = x509.load_pem_x509_certificate(packet.cert, default_backend())
-                extract_pubkA = certification.public_key()
+                self.extract_pubkA = certification.public_key()
                 try:
-                    extract_pubkA.verify(packet.signature, self.dataA,
-                                         padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
-                                                     salt_length=padding.PSS.MAX_LENGTH), hashes.SHA256())
+                    self.extract_pubkA.verify(packet.signature, self.dataA,
+                                              padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                          salt_length=padding.PSS.MAX_LENGTH), hashes.SHA256())
 
                 except Exception as error:
                     logger.debug("Sever verify failed because wrong signature")
@@ -153,47 +153,69 @@ class CRAP(StackingProtocol):
                     self.transport.write(new_secure_packet.__serialize__())
                     self.transport.close()
 
-                print("jinlaila!!!!!!!!!!!!!!")
                 # Create Server long term key
                 privkB = ec.generate_private_key(ec.SECP384R1(), default_backend())
                 pubkB = privkB.public_key()
 
+                # Create pk in packet (serialization)
+                tmp_pubkB = pubkB.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
+                self.dataB = tmp_pubkB
 
-                publickeyB = load_pem_private_key(packet.pk, password=None, backend=default_backend())
-                server_shared_key = privkB.exchange(ec.ECDH, publickeyB)
+                # Create ephemeral key for signing
+                self.signkB = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
+                self.pubk_sigB = self.signkB.public_key()
 
-                signkB = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
-                pubk_sigB = signkB.public_key()
+                # Create signature
+                sigB = self.signkB.sign(self.dataB,
+                                        padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                    salt_length=padding.PSS.MAX_LENGTH),
+                                        hashes.SHA256())
 
-                tmp_pubk_sigB = pubk_sigB.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
-                certB = tmp_pubk_sigB
+                # Create nonceB
+                tmp_nonceB = 1
+                self.nonceB = tmp_nonceB
 
-                tmpB = pubkB.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
-                self.dataB = tmpB
+                # Generate shared key
+                pubkB_recv = load_pem_private_key(packet.pk, password=None, backend=default_backend())
+                server_shared_key = privkB.exchange(ec.ECDH, pubkB_recv)
 
-                sigB = signkB.sign(self.dataB,
-                                   padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-                                   hashes.SHA256())
+                # Create certificate with the help of ephemeral private key
+                subject = issuer = x509.Name([
+                    x509.NameAttribute(NameOID.COUNTRY_NAME, u"US"),
+                    x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Baltimore"),
+                    # x509.NameAttribute(NameOID.LOCALITY_NAME, u"San Francisco"),
+                    x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"JHU"),
+                    x509.NameAttribute(NameOID.COMMON_NAME, u"20194networksecurityserver.com"),
+                ])
+                builder = x509.CertificateBuilder()
+                builder = builder.subject_name(subject)
+                builder = builder.issuer_name(issuer)
+                builder = builder.public_key(self.pubk_sigB)
+                builder = builder.serial_number(x509.random_serial_number())
+                builder = builder.not_valid_before(datetime.datetime.utcnow())
+                builder = builder.not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=30))
+                certificate = builder.sign(private_key=self.signkB, algorithm=hashes.SHA256(),
+                                           backend=default_backend())
+                # Create CertB to transmit (serialization)
+                certB = certificate.public_bytes(Encoding.PEM)
 
-                nonceSignatureB = signkB.sign(packet.nonce,
-                                              padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
-                                                          salt_length=padding.PSS.MAX_LENGTH),
-                                              hashes.SHA256())
+                # Create nonceSignatureB (bytes)
+                nonceSignatureB = self.signkB.sign(packet.nonce,
+                                                   padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                               salt_length=padding.PSS.MAX_LENGTH),
+                                                   hashes.SHA256())
 
-                tmp_nonceB = 4
-                nonceB = bytes(tmp_nonceB)
-
-                new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=tmp_nonceB,
+                new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=self.nonceB,
                                                     nonceSignature=nonceSignatureB, cert=certB)
 
                 self.transport.write(new_secure_packet.__serialize__())
 
             elif packet.status == 1:
                 try:
-                    self.pubk_sigA.verify(packet.nonceSignature, self.nonceA,
-                                          padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
-                                                      salt_length=padding.PSS.MAX_LENGTH),
-                                          hashes.SHA256())
+                    self.extract_pubkA.verify(packet.nonceSignature, self.nonceA,
+                                              padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                          salt_length=padding.PSS.MAX_LENGTH),
+                                              hashes.SHA256())
 
                 except Exception as error:
                     logger.debug("Sever verify failed because wrong signature")
@@ -203,13 +225,15 @@ class CRAP(StackingProtocol):
                 print("Handshake complete")
 
         if self.mode == "client" and packet.status == 1:
+            certification = x509.load_pem_x509_certificate(packet.cert, default_backend())
+            extract_pubkB = certification.public_key()
             try:
-                packet.cert.verify(packet.signature, self.dataB,
-                                   padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-                                   hashes.SHA256())
-                packet.cert.verify(packet.nonceSignature, self.nonceA,
-                                   padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-                                   hashes.SHA256())
+                extract_pubkB.verify(packet.signature, self.dataB,
+                                     padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+                                     hashes.SHA256())
+                extract_pubkB.verify(packet.nonceSignature, self.nonceA,
+                                     padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+                                     hashes.SHA256())
 
             except Exception as error:
                 logger.debug("Sever verify failed because wrong signature")
@@ -217,8 +241,9 @@ class CRAP(StackingProtocol):
                 self.transport.write(new_secure_packet.__serialize__())
                 self.transport.close()
 
-            publickeyA = load_pem_private_key(packet.pk, password=None, backend=default_backend())
-            client_shared_key = self.privkA.exchange(ec.ECDH, publickeyA)
+            # Generate shared key
+            pubkA_recv = load_pem_private_key(packet.pk, password=None, backend=default_backend())
+            client_shared_key = privkB.exchange(ec.ECDH, pubkB_recv)
 
             nonceSignatureA = self.signkA.sign(packet.nonce,
                                                padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
