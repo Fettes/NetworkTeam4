@@ -10,7 +10,6 @@ from playground.network.packet import PacketType
 from playground.network.packet.fieldtypes import UINT8, UINT32, STRING, BUFFER
 from playground.network.packet.fieldtypes.attributes import Optional
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.backends.interfaces import PEMSerializationBackend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -181,8 +180,8 @@ class CRAP(StackingProtocol):
                 self.nonceB = tmp_nonceB
 
                 # Generate shared key
-                pubkB_recv = load_pem_public_key(packet.pk, backend=PEMSerializationBackend())
-                server_shared_key = privkB.exchange(ec.ECDH, pubkB_recv)
+                #pubkB_recv = load_pem_public_key(packet.pk, backend=default_backend())
+                #server_shared_key = privkB.exchange(ec.ECDH, pubkB_recv)
 
                 # Create certificate with the help of ephemeral private key
                 subject = issuer = x509.Name([
