@@ -262,7 +262,7 @@ class CRAP(StackingProtocol):
                                                padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                                            salt_length=padding.PSS.MAX_LENGTH),
                                                hashes.SHA256())
-
+            print("aaaaaaaaaaaaaaaaaaaaaa")
             new_secure_packet = HandshakePacket(status=1, nonceSignature=nonceSignatureA)
             self.transport.write(new_secure_packet.__serialize__())
 
