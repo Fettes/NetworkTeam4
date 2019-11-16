@@ -117,7 +117,7 @@ class POOP(StackingProtocol):
         self.higher_transport = POOPTransport(transport)
         self.higher_transport.connect_protocol(self)
 
-        self.SYN = randrange(2**32)
+        self.SYN = randrange(2 ** 32)
         self.status = "LISTEN"
         if self._mode == "client":  # client send first packet
             handshake_pkt = HandshakePacket(SYN=self.SYN, status=0, hash=0)
@@ -139,18 +139,19 @@ class POOP(StackingProtocol):
         self.transport.write(error_pkt.__serialize__())
         return
 
-
     def handshake_pkt_recv(self, pkt):
+        if self.status == "ESTABLISHED":
+            # ERROR: recvive a handshake packet when connect ESTABLISHED
+            logger.debug("recvive a handshake packet when connect ESTABLISHED")
+            return
+
         if pkt.status == 2:
             # ERROR
             logger.debug("{} POOP: ERROR recv a error pkt ".format(self._mode))
             # TODO: resend packet
             self.transport.write(self.send_buff[0])
             return
-        if self.status == "ESTABLISHED":
-            # ERROR: recvive a handshake packet when connect ESTABLISHED
-            logger.debug("recvive a handshake packet when connect ESTABLISHED")
-            return
+
         elif self.status == "LISTEN":
             if pkt.status == 0:
                 if pkt.SYN:  # server LISTEN and handshake get the packet from the client
@@ -310,6 +311,7 @@ class POOP(StackingProtocol):
             await asyncio.sleep(1)  # - (time.time() - self.last_recv))
 
         # this function is called when the other side initiate a shutdown (received when status == ESTABLISHED)
+
     def init_shutdown_pkt_recv(self, pkt):
         if pkt.DEFINITION_IDENTIFIER != "poop.shutdownpacket":
             # wrong pkt. Check calling function?
@@ -406,7 +408,7 @@ class POOP(StackingProtocol):
     def connection_lost(self, exc):
         logger.debug(
             "{} passthrough connection lost. Shutting down higher layer.".
-            format(self._mode))
+                format(self._mode))
         self.higherProtocol().connection_lost(exc)
 
     async def connection_timeout_check(self):
@@ -452,7 +454,7 @@ class POOP(StackingProtocol):
                 print("IN: ACK=" + str(pkt.ACK))
 
             else:
-                logger.debug("IN: ACK="+str(pkt.ACK))
+                logger.debug("IN: ACK=" + str(pkt.ACK))
             return
 
         if pkt.seq <= self.recv_next + self.recv_wind_size:
@@ -486,7 +488,7 @@ class POOP(StackingProtocol):
                         self.recv_queue.pop(0)
                     else:
                         break
-                if self.recv_next == 2**32:
+                if self.recv_next == 2 ** 32:
                     self.recv_next = 0
                 else:
                     self.recv_next += 1
@@ -508,11 +510,11 @@ class POOP(StackingProtocol):
         print('Higher protocol called init_close(). Killing higher protocol.')
         self.higherProtocol().connection_lost(None)
         if not self.send_packet:
-           print("Ball Ball YOU")
-           self.send_shutdown_pkt()
+            print("Ball Ball YOU")
+            self.send_shutdown_pkt()
         else:
-           print(self.send_packet)
-           self.loop.create_task(self.shutdown_send_wait())
+            print(self.send_packet)
+            self.loop.create_task(self.shutdown_send_wait())
 
     def queue_send_pkts(self):
         while self.send_data_buff and not self.send_packet:
@@ -530,7 +532,7 @@ class POOP(StackingProtocol):
                                  hash=0)
                 pkt.hash = binascii.crc32(pkt.__serialize__()) & 0xffffffff
                 self.send_data_buff = b""
-            if self.recv_next == 2**32:
+            if self.recv_next == 2 ** 32:
                 self.recv_next = 0
             else:
                 self.send_next += 1
@@ -547,4 +549,3 @@ PassthroughClientFactory = StackingProtocolFactory.CreateFactoryType(
 
 PassthroughServerFactory = StackingProtocolFactory.CreateFactoryType(
     lambda: POOP(mode="server"))
-
