@@ -74,6 +74,7 @@ class CRAP(StackingProtocol):
     def connection_made(self, transport):
         logger.debug("{} Crap: connection made".format(self.mode))
         self.transport = transport
+        print("start Tianshi Feng Test")
 
         if self.mode == "client":
             # Create Client ephemeral key
@@ -116,7 +117,6 @@ class CRAP(StackingProtocol):
             # Create CertA to transmit (serialization)
             certA = certificate.public_bytes(Encoding.PEM)
             #print(self.pubk_sigA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo))
-            print(self.dataA)
 
             new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=tmp_nonceA, cert=certA)
             self.transport.write(new_secure_packet.__serialize__())
