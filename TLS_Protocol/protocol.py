@@ -36,11 +36,9 @@ class CrapPacketType(PacketType):
 class HandshakePacket(CrapPacketType):
     DEFINITION_IDENTIFIER = "crap.handshakepacket"
     DEFINITION_VERSION = "1.0"
-
     NOT_STARTED = 0
     SUCCESS = 1
     ERROR = 2
-
     FIELDS = [
         ("status", UINT8),
         ("nonce", UINT32({Optional: True})),
@@ -54,7 +52,6 @@ class HandshakePacket(CrapPacketType):
 class DataPacket(CrapPacketType):
     DEFINITION_IDENTIFIER = "crap.datapacket"
     DEFINITION_VERSION = "1.0"
-
     FIELDS = [
         ("data", BUFFER),
         ("signature", BUFFER),
