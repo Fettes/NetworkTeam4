@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.serialization import Encoding
+from cryptography.hazmat.primitives.serialization import Encoding, load_pem_public_key
 from cryptography.hazmat.primitives.serialization import PublicFormat
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography import x509
@@ -180,7 +180,7 @@ class CRAP(StackingProtocol):
                 self.nonceB = tmp_nonceB
 
                 # Generate shared key
-                pubkB_recv = load_pem_private_key(packet.pk, password=None, backend=default_backend())
+                pubkB_recv = load_pem_public_key(packet.pk, password=None, backend=default_backend())
                 server_shared_key = privkB.exchange(ec.ECDH, pubkB_recv)
 
                 # Create certificate with the help of ephemeral private key
@@ -208,6 +208,7 @@ class CRAP(StackingProtocol):
                                                    padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                                                salt_length=padding.PSS.MAX_LENGTH),
                                                    hashes.SHA256())
+                print("1231313131313131")
 
                 new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=self.nonceB,
                                                     nonceSignature=nonceSignatureB, cert=certB)
@@ -246,7 +247,7 @@ class CRAP(StackingProtocol):
                 self.transport.close()
 
             # Generate shared key
-            pubkA_recv = load_pem_private_key(packet.pk, password=None, backend=default_backend())
+            pubkA_recv = load_pem_public_key(packet.pk, password=None, backend=default_backend())
             client_shared_key = privkB.exchange(ec.ECDH, pubkB_recv)
 
             nonceSignatureA = self.signkA.sign(packet.nonce,
