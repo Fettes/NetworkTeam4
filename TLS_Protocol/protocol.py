@@ -180,7 +180,7 @@ class CRAP(StackingProtocol):
                 self.nonceB = tmp_nonceB
 
                 # Generate shared key
-                pubkB_recv = load_pem_public_key(packet.pk, password=None, backend=default_backend())
+                pubkB_recv = load_pem_public_key(packet.pk, backend=default_backend())
                 server_shared_key = privkB.exchange(ec.ECDH, pubkB_recv)
 
                 # Create certificate with the help of ephemeral private key
@@ -247,7 +247,7 @@ class CRAP(StackingProtocol):
                 self.transport.close()
 
             # Generate shared key
-            pubkA_recv = load_pem_public_key(packet.pk, password=None, backend=default_backend())
+            pubkA_recv = load_pem_public_key(packet.pk, backend=default_backend())
             client_shared_key = privkB.exchange(ec.ECDH, pubkB_recv)
 
             nonceSignatureA = self.signkA.sign(packet.nonce,
