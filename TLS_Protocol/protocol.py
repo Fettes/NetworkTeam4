@@ -95,7 +95,7 @@ class CRAP(StackingProtocol):
 
             # Create nonceA
             tmp_nonceA = 1
-            self.nonceA = tmp_nonceA
+            self.nonceA = str(tmp_nonceA).encode('ASCII')
 
             # Create certificate with the help of ephemeral private key
             subject = issuer = x509.Name([
@@ -118,7 +118,7 @@ class CRAP(StackingProtocol):
             #print(self.pubk_sigA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo))
             print(self.dataA)
 
-            new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=self.nonceA, cert=certA)
+            new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=tmp_nonceA, cert=certA)
             self.transport.write(new_secure_packet.__serialize__())
 
     def data_received(self, buffer):
@@ -179,7 +179,7 @@ class CRAP(StackingProtocol):
 
                 # Create nonceB
                 tmp_nonceB = 1
-                self.nonceB = tmp_nonceB
+                self.nonceB = str(tmp_nonceB).encode('ASCII')
 
                 # Reveive nonceA
                 nonceA = str(packet.nonce).encode('ASCII')
@@ -209,12 +209,13 @@ class CRAP(StackingProtocol):
                 certB = certificate.public_bytes(Encoding.PEM)
 
                 # Create nonceSignatureB (bytes)
+
                 nonceSignatureB = self.signkB.sign(nonceA,
                                                    padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                                                salt_length=padding.PSS.MAX_LENGTH),
                                                    hashes.SHA256())
 
-                new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=self.nonceB,
+                new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=tmp_nonceB,
                                                     nonceSignature=nonceSignatureB, cert=certB)
 
                 self.transport.write(new_secure_packet.__serialize__())
@@ -240,7 +241,6 @@ class CRAP(StackingProtocol):
                 extract_pubkB.verify(packet.signature, packet.pk,
                                      padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
                                      hashes.SHA256())
-                print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
                 extract_pubkB.verify(packet.nonceSignature, self.nonceA,
                                      padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
                                      hashes.SHA256())
