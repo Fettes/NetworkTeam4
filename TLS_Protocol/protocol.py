@@ -179,9 +179,12 @@ class CRAP(StackingProtocol):
                 tmp_nonceB = 1
                 self.nonceB = tmp_nonceB
 
+                # Reveive nonceA
+                nonceA = str(packet.nonce).encode('ASCII')
+
                 # Generate shared key
-                #pubkB_recv = load_pem_public_key(packet.pk, backend=default_backend())
-                #server_shared_key = privkB.exchange(ec.ECDH, pubkB_recv)
+                # pubkB_recv = load_pem_public_key(packet.pk, backend=default_backend())
+                # server_shared_key = privkB.exchange(ec.ECDH, pubkB_recv)
 
                 # Create certificate with the help of ephemeral private key
                 subject = issuer = x509.Name([
@@ -204,7 +207,7 @@ class CRAP(StackingProtocol):
                 certB = certificate.public_bytes(Encoding.PEM)
 
                 # Create nonceSignatureB (bytes)
-                nonceSignatureB = self.signkB.sign(packet.nonce,
+                nonceSignatureB = self.signkB.sign(nonceA,
                                                    padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                                                salt_length=padding.PSS.MAX_LENGTH),
                                                    hashes.SHA256())
@@ -247,10 +250,13 @@ class CRAP(StackingProtocol):
                 self.transport.close()
 
             # Generate shared key
-            pubkA_recv = load_pem_public_key(packet.pk, backend=default_backend())
-            client_shared_key = privkB.exchange(ec.ECDH, pubkB_recv)
+            #pubkA_recv = load_pem_public_key(packet.pk, backend=default_backend())
+            #client_shared_key = privkB.exchange(ec.ECDH, pubkA_recv)
 
-            nonceSignatureA = self.signkA.sign(packet.nonce,
+            # Reveive nonceB
+            nonceB = str(packet.nonce).encode('ASCII')
+
+            nonceSignatureA = self.signkA.sign(packet.nonceB,
                                                padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                                            salt_length=padding.PSS.MAX_LENGTH),
                                                hashes.SHA256())
