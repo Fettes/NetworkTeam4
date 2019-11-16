@@ -240,6 +240,7 @@ class CRAP(StackingProtocol):
                 extract_pubkB.verify(packet.signature, packet.pk,
                                      padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
                                      hashes.SHA256())
+                print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
                 extract_pubkB.verify(packet.nonceSignature, self.nonceA,
                                      padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
                                      hashes.SHA256())
