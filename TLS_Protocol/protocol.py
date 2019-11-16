@@ -222,7 +222,7 @@ class CRAP(StackingProtocol):
 
             elif packet.status == 1:
                 try:
-                    self.extract_pubkA.verify(packet.nonceSignature, self.nonceA,
+                    self.extract_pubkA.verify(packet.nonceSignature, self.nonceB,
                                               padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                                           salt_length=padding.PSS.MAX_LENGTH),
                                               hashes.SHA256())
