@@ -115,8 +115,8 @@ class CRAP(StackingProtocol):
             certificate = builder.sign(private_key=self.signkA, algorithm=hashes.SHA256(), backend=default_backend())
             # Create CertA to transmit (serialization)
             certA = certificate.public_bytes(Encoding.PEM)
-            print(self.pubk_sigA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo))
-
+            #print(self.pubk_sigA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo))
+            print(self.dataA)
 
             new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=self.nonceA, cert=certA)
             self.transport.write(new_secure_packet.__serialize__())
@@ -144,7 +144,8 @@ class CRAP(StackingProtocol):
             if packet.status == 0:
                 certification = x509.load_pem_x509_certificate(packet.cert, default_backend())
                 self.extract_pubkA = certification.public_key()
-                print(self.extract_pubkA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo))
+                # print(self.extract_pubkA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo))
+                print(packet.pk)
                 try:
                     self.extract_pubkA.verify(packet.signature, packet.pk,
                                               padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
