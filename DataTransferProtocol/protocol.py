@@ -213,6 +213,7 @@ class POOP(StackingProtocol):
                         self.send_next = self.SYN
                         self.next_expected_ack = self.SYN
                         self.recv_next = pkt.SYN - 1
+                        print(self.recv_next)
                         self.last_recv = time.time()
                         self.loop.create_task(self.wait_ack_timeout())
                         self.higherProtocol().connection_made(
