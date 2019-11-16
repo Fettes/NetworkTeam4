@@ -133,6 +133,8 @@ class CRAP(StackingProtocol):
             logger.debug("{} Crap the pkt name is: {}".format(self.mode, pkt_type))
             if pkt_type == "crap.handshakepacket":
                 self.crap_handshake_recv(pkt)
+                print(pkt.status)
+                print(self.mode)
                 continue
             else:
                 print("{} Crap error: the recv pkt name: \"{}\" this is unexpected".format(
@@ -211,7 +213,6 @@ class CRAP(StackingProtocol):
                                                    padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                                                salt_length=padding.PSS.MAX_LENGTH),
                                                    hashes.SHA256())
-                print("1231313131313131")
 
                 new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=self.nonceB,
                                                     nonceSignature=nonceSignatureB, cert=certB)
