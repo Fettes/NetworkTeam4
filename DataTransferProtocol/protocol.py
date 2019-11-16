@@ -207,8 +207,11 @@ class POOP(StackingProtocol):
                                 handshake_pkt.__serialize__()) & 0xffffffff
                             self.transport.write(handshake_pkt.__serialize__())
                             self.send_buff.append(
-                                handshake_pkt.__serialize__())  # @
+                                handshake_pkt.__serialize__())
                             self.handshake_timeout_task.cancel()
+                            self.recv_next = pkt.SYN
+                        else:
+                            self.recv_next = pkt.SYN - 1
                         self.status = "ESTABLISHED"
                         self.send_next = self.SYN
 
