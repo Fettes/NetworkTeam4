@@ -436,7 +436,8 @@ class POOP(StackingProtocol):
         # Drop if not a datapacket
         if pkt.DEFINITION_IDENTIFIER != "poop.datapacket":
             return
-
+        if len(pkt.data) == 0:
+            return
         # If ACK is set, handle ACK
         if pkt.ACK:
             if pkt.seq or pkt.data:
