@@ -211,8 +211,10 @@ class POOP(StackingProtocol):
                             self.handshake_timeout_task.cancel()
                         self.status = "ESTABLISHED"
                         self.send_next = self.SYN
+
                         self.next_expected_ack = self.SYN
                         self.recv_next = pkt.SYN - 1
+                        print(self.send_next)
                         print(self.recv_next)
                         self.last_recv = time.time()
                         self.loop.create_task(self.wait_ack_timeout())
