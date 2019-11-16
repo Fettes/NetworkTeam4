@@ -146,12 +146,12 @@ class CRAP(StackingProtocol):
                 self.extract_pubkA = certification.public_key()
                 print(self.extract_pubkA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo))
                 try:
-                    self.extract_pubkA.verify(packet.signature, self.dataA,
+                    self.extract_pubkA.verify(packet.signature, packet.pk,
                                               padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                                           salt_length=padding.PSS.MAX_LENGTH), hashes.SHA256())
 
                 except Exception as error:
-                    logger.debug("Sever verify failed because wrong signature")
+                    logger.debug("Server 0 verify failed because wrong signature")
                     new_secure_packet = HandshakePacket(status=2)
                     self.transport.write(new_secure_packet.__serialize__())
                     self.transport.close()
@@ -221,7 +221,7 @@ class CRAP(StackingProtocol):
                                               hashes.SHA256())
 
                 except Exception as error:
-                    logger.debug("Sever verify failed because wrong signature")
+                    logger.debug("Server verify failed because wrong signature")
                     new_secure_packet = HandshakePacket(status=2)
                     self.transport.write(new_secure_packet.__serialize__())
                     self.transport.close()
@@ -231,7 +231,7 @@ class CRAP(StackingProtocol):
             certification = x509.load_pem_x509_certificate(packet.cert, default_backend())
             extract_pubkB = certification.public_key()
             try:
-                extract_pubkB.verify(packet.signature, self.dataB,
+                extract_pubkB.verify(packet.signature, packet.pk,
                                      padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
                                      hashes.SHA256())
                 extract_pubkB.verify(packet.nonceSignature, self.nonceA,
@@ -239,7 +239,7 @@ class CRAP(StackingProtocol):
                                      hashes.SHA256())
 
             except Exception as error:
-                logger.debug("Sever verify failed because wrong signature")
+                logger.debug("client verify failed because wrong signature")
                 new_secure_packet = HandshakePacket(status=2)
                 self.transport.write(new_secure_packet.__serialize__())
                 self.transport.close()
