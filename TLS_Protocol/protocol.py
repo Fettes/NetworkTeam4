@@ -76,7 +76,7 @@ class CRAP(StackingProtocol):
         self.transport = transport
 
         if self.mode == "client":
-            # Create Client long term key
+            # Create Client ephemeral key
             self.privkA = ec.generate_private_key(ec.SECP384R1(), default_backend())
             pubkA = self.privkA.public_key()
 
@@ -84,7 +84,7 @@ class CRAP(StackingProtocol):
             tmp_pubkA = pubkA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
             self.dataA = tmp_pubkA
 
-            # Create ephemeral key for signing
+            # Create long term key for signing
             self.signkA = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
             self.pubk_sigA = self.signkA.public_key()
 
@@ -115,7 +115,8 @@ class CRAP(StackingProtocol):
             certificate = builder.sign(private_key=self.signkA, algorithm=hashes.SHA256(), backend=default_backend())
             # Create CertA to transmit (serialization)
             certA = certificate.public_bytes(Encoding.PEM)
-            print(self.pubk_sigA)
+            print(self.pubk_sigA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo))
+
 
             new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=self.nonceA, cert=certA)
             self.transport.write(new_secure_packet.__serialize__())
@@ -143,7 +144,7 @@ class CRAP(StackingProtocol):
             if packet.status == 0:
                 certification = x509.load_pem_x509_certificate(packet.cert, default_backend())
                 self.extract_pubkA = certification.public_key()
-                print(self.extract_pubkA)
+                print(self.extract_pubkA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo))
                 try:
                     self.extract_pubkA.verify(packet.signature, self.dataA,
                                               padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
