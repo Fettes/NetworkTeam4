@@ -147,6 +147,10 @@ class POOP(StackingProtocol):
             # TODO: resend packet
             self.transport.write(self.send_buff[0])
             return
+        if self.status == "ESTABLISHED":
+            # ERROR: recvive a handshake packet when connect ESTABLISHED
+            logger.debug("recvive a handshake packet when connect ESTABLISHED")
+            return
         elif self.status == "LISTEN":
             if pkt.status == 0:
                 if pkt.SYN:  # server LISTEN and handshake get the packet from the client
@@ -252,10 +256,6 @@ class POOP(StackingProtocol):
                 # ERROR: not expecting status=2
                 self.handshake_send_error()
                 return
-        elif self.status == "ESTABLISHED":
-            # ERROR: recvive a handshake packet when connect ESTABLISHED
-            logger.debug("recvive a handshake packet when connect ESTABLISHED")
-            return
         else:
             # ERROR
             logger.debug("BUG!")
