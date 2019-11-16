@@ -139,13 +139,6 @@ class POOP(StackingProtocol):
         self.transport.write(error_pkt.__serialize__())
         return
 
-    def printpkt(self, pkt):  # try to print packet content
-        print("-----------")
-        for f in pkt.FIELDS:
-            fname = f[0]
-            print(fname + ": " + pkt._fields[fname]._data)
-        print("-----------")
-        return
 
     def handshake_pkt_recv(self, pkt):
         if pkt.status == 2:
@@ -285,7 +278,7 @@ class POOP(StackingProtocol):
                 self.handshake_pkt_recv(pkt)
                 continue
             elif pkt_type == "poop.datapacket":
-                print(pkt.data)
+                # print(pkt.data)
                 if self.status == 'FIN_SENT':
                     self.shutdown_ack_recv(pkt)
                 self.last_recv = time.time()
