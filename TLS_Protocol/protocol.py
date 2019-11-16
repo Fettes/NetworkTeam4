@@ -257,7 +257,7 @@ class CRAP(StackingProtocol):
             # Reveive nonceB
             nonceB = str(packet.nonce).encode('ASCII')
 
-            nonceSignatureA = self.signkA.sign(packet.nonceB,
+            nonceSignatureA = self.signkA.sign(nonceB,
                                                padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                                            salt_length=padding.PSS.MAX_LENGTH),
                                                hashes.SHA256())

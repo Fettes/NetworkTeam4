@@ -216,9 +216,9 @@ class POOP(StackingProtocol):
                         self.send_next = self.SYN
 
                         self.next_expected_ack = self.SYN
-                        self.recv_next = pkt.SYN - 1
-                        print(self.send_next)
-                        print(self.recv_next)
+                        # self.recv_next = pkt.SYN - 1
+                        # print(self.send_next)
+                        # print(self.recv_next)
                         self.last_recv = time.time()
                         self.loop.create_task(self.wait_ack_timeout())
                         self.higherProtocol().connection_made(
@@ -484,10 +484,9 @@ class POOP(StackingProtocol):
         self.recv_queue.append(pkt)
         self.recv_queue.sort(key=lambda pkt_: pkt_.seq)
         while self.recv_queue:
-            print(self.recv_next)
-            print(self.recv_queue[0].seq)
+            # print(self.recv_next)
+            # print(self.recv_queue[0].seq)
             if self.recv_queue[0].seq == self.recv_next:
-                print(self.recv_queue[0].data)
                 self.higherProtocol().data_received(
                     self.recv_queue.pop(0).data)
                 while self.recv_queue:
@@ -526,8 +525,8 @@ class POOP(StackingProtocol):
     def queue_send_pkts(self):
         while self.send_data_buff and not self.send_packet:
             if len(self.send_data_buff) >= 15000:
-                result = isinstance(self.send_data_buff[0:15000],bytes)
-                print(result)
+                # result = isinstance(self.send_data_buff[0:15000],bytes)
+                # print(result)
                 pkt = DataPacket(seq=self.send_next,
                                  data=self.send_data_buff[0:15000],
                                  hash=0)
