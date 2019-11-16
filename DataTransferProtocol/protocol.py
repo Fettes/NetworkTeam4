@@ -440,6 +440,7 @@ class POOP(StackingProtocol):
         #     return
         # If ACK is set, handle ACK
         if pkt.ACK:
+
             if pkt.seq or pkt.data:
                 return
             # Check hash, drop if invalid
@@ -542,7 +543,6 @@ class POOP(StackingProtocol):
             self.send_packet_time = time.time()
             self.transport.write(pkt.__serialize__())
             print("OUT: SEQ=" + str(pkt.seq))
-            print(pkt.data)
             # self.loop.create_task(self.wait_ack_timeout(pkt))
 
 
