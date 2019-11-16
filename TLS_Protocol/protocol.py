@@ -147,7 +147,7 @@ class CRAP(StackingProtocol):
                 certification = x509.load_pem_x509_certificate(packet.cert, default_backend())
                 self.extract_pubkA = certification.public_key()
                 # print(self.extract_pubkA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo))
-                print(packet.pk)
+
                 try:
                     self.extract_pubkA.verify(packet.signature, packet.pk,
                                               padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
@@ -262,7 +262,7 @@ class CRAP(StackingProtocol):
                                                padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                                            salt_length=padding.PSS.MAX_LENGTH),
                                                hashes.SHA256())
-            print("aaaaaaaaaaaaaaaaaaaaaa")
+
             new_secure_packet = HandshakePacket(status=1, nonceSignature=nonceSignatureA)
             self.transport.write(new_secure_packet.__serialize__())
 

@@ -301,7 +301,6 @@ class POOP(StackingProtocol):
                 print("{} POOP error: the recv pkt name: \"{}\" this is unexpected".format(
                     self._mode, pkt_type))
                 return
-        print("Not enough data for a packet.")
 
     async def handshake_timeout_check(self):
         count = 0
