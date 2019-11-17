@@ -492,7 +492,7 @@ class POOP(StackingProtocol):
 
     def send_data(self, data):
         self.send_data_buff += data
-        self.queue_send_pkts()
+        self.send_pkts()
 
     def init_close(self):
         # kill higher protocol
