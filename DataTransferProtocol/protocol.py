@@ -268,14 +268,14 @@ class POOP(StackingProtocol):
                 self.last_recv = time.time()
                 self.handshake_pkt_recv(pkt)
                 continue
-            elif pkt_type == "poop.datapacket":
-                # print(pkt.data)
+            if pkt_type == "poop.datapacket":
+                print(pkt.seq)
                 if self.status == 'FIN_SENT':
                     self.shutdown_ack_recv(pkt)
                 self.last_recv = time.time()
                 self.data_pkt_recv(pkt)
                 continue
-            elif pkt_type == "poop.shutdownpacket":
+            if pkt_type == "poop.shutdownpacket":
                 if self.status == 'FIN_SENT':
                     self.shutdown_ack_recv(pkt)
                 self.last_recv = time.time()
