@@ -529,8 +529,8 @@ class POOP(StackingProtocol):
 
 
 
-# PassthroughClientFactory = StackingProtocolFactory.CreateFactoryType(
-#     lambda: POOP(mode="client"))
-#
-# PassthroughServerFactory = StackingProtocolFactory.CreateFactoryType(
-#     lambda: POOP(mode="server"))
+PassthroughClientFactory = StackingProtocolFactory.CreateFactoryType(
+    lambda: POOP(mode="client"))
+
+PassthroughServerFactory = StackingProtocolFactory.CreateFactoryType(
+    lambda: POOP(mode="server"))
