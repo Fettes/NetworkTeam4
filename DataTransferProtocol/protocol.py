@@ -294,16 +294,13 @@ class POOP(StackingProtocol):
     async def handshake_timeout_check(self):
         count = 0
         while count < 3:
-            # if (time.time() - self.last_recv) > 1:
-            # time out after 10 sec
             if self.status == "ESTABLISHED" or self.status == "FIN_SENT" or self.status == "DYING":
                 return
             handshake_pkt = HandshakePacket(SYN=self.SYN, status=0, hash=0)
-            handshake_pkt.hash = binascii.crc32(
-                handshake_pkt.__serialize__()) & 0xffffffff
+            handshake_pkt.hash = binascii.crc32(handshake_pkt.__serialize__()) & 0xffffffff
             self.transport.write(handshake_pkt.__serialize__())
             count += 1
-            await asyncio.sleep(5)  # - (time.time() - self.last_recv))
+            await asyncio.sleep(5)
 
         # this function is called when the other side initiate a shutdown (received when status == ESTABLISHED)
 
