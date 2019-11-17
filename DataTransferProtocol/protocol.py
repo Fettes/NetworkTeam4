@@ -6,13 +6,11 @@ from random import randrange
 from playground.network.packet import PacketType
 from playground.network.packet.fieldtypes import UINT8, UINT32, STRING, BUFFER
 from playground.network.packet.fieldtypes.attributes import Optional
-# 9:47
-
 import binascii
 import bisect
 
 logger = logging.getLogger("playground.__connector__." + __name__)
-
+# team 4
 
 class PoopPacketType(PacketType):
     DEFINITION_IDENTIFIER = "poop"
@@ -79,17 +77,15 @@ class ErrorHandleClass():
 class POOP(StackingProtocol):
     def __init__(self, mode):
         logger.debug("{} POOP: init protocol".format(mode))
-        print("test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        print("----------------------start test---------------------")
         super().__init__()
 
         self._mode = mode
-        # 0 = no connection, 1 = waiting for handshake ack, 2 = connection established, 3 = dying
         self.SYN = None
         self.FIN = None
         self.status = 0
         self.last_recv = 0  # time of last pkt received
         self.shutdown_wait_start = 0
-        # sequence number of last received data pkt that was passed up to the app layer
         self.last_in_order_seq = 0
         self.recv_queue = []
         self.recv_wind_size = 10
@@ -121,13 +117,10 @@ class POOP(StackingProtocol):
         self.status = "LISTEN"
         if self._mode == "client":  # client send first packet
             handshake_pkt = HandshakePacket(SYN=self.SYN, status=0, hash=0)
-            handshake_pkt.hash = binascii.crc32(
-                handshake_pkt.__serialize__()) & 0xffffffff
+            handshake_pkt.hash = binascii.crc32(handshake_pkt.__serialize__()) & 0xffffffff
             self.transport.write(handshake_pkt.__serialize__())
 
-            # TODO:start timer
-            self.handshake_timeout_task = self.loop.create_task(
-                self.handshake_timeout_check())
+            self.handshake_timeout_task = self.loop.create_task(self.handshake_timeout_check())
             self.status = 'SYN_SENT'
             # save sended handshake packet
             self.send_buff.append(handshake_pkt.__serialize__())
@@ -155,12 +148,10 @@ class POOP(StackingProtocol):
         elif self.status == "LISTEN":
             if pkt.status == 0:
                 if pkt.SYN:  # server LISTEN and handshake get the packet from the client
-                    pkt_copy = HandshakePacket(SYN=pkt.SYN,
-                                               status=pkt.status,
-                                               hash=0)
-                    if binascii.crc32(
-                            pkt_copy.__serialize__()) & 0xffffffff != pkt.hash:
+                    pkt_copy = HandshakePacket(SYN=pkt.SYN, status=pkt.status, hash=0)
+                    if binascii.crc32(pkt_copy.__serialize__()) & 0xffffffff != pkt.hash:
                         return
+
                     handshake_pkt = HandshakePacket(SYN=self.SYN,
                                                     ACK=pkt.SYN + 1,
                                                     status=1,
