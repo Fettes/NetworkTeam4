@@ -141,7 +141,6 @@ class POOP(StackingProtocol):
         if pkt.status == 2:
             # ERROR
             logger.debug("{} POOP: ERROR recv a error pkt ".format(self._mode))
-            # TODO: resend packet
             self.transport.write(self.send_buff[0])
             return
 
@@ -450,13 +449,13 @@ class POOP(StackingProtocol):
                 logger.debug("IN: ACK=" + str(pkt.ACK))
             return
 
-        if pkt.seq <= self.recv_next + self.recv_wind_size:
-            pkt_copy = DataPacket(seq=pkt.seq, data=pkt.data, hash=0)
-            if binascii.crc32(
-                    pkt_copy.__serialize__()) & 0xffffffff != pkt.hash:
-                return
-        else:
-            return
+        # if pkt.seq <= self.recv_next + self.recv_wind_size:
+        #     pkt_copy = DataPacket(seq=pkt.seq, data=pkt.data, hash=0)
+        #     if binascii.crc32(
+        #             pkt_copy.__serialize__()) & 0xffffffff != pkt.hash:
+        #         return
+        # else:
+        #     return
 
         print("IN: SEQ=" + str(pkt.seq))
 
@@ -514,15 +513,11 @@ class POOP(StackingProtocol):
             if len(self.send_data_buff) >= 15000:
                 # result = isinstance(self.send_data_buff[0:15000],bytes)
                 # print(result)
-                pkt = DataPacket(seq=self.send_next,
-                                 data=self.send_data_buff[0:15000],
-                                 hash=0)
+                pkt = DataPacket(seq=self.send_next, data=self.send_data_buff[0:15000], hash=0)
                 pkt.hash = binascii.crc32(pkt.__serialize__()) & 0xffffffff
                 self.send_data_buff = self.send_data_buff[15000:]
             else:
-                pkt = DataPacket(seq=self.send_next,
-                                 data=self.send_data_buff[0:len(self.send_data_buff)],
-                                 hash=0)
+                pkt = DataPacket(seq=self.send_next, data=self.send_data_buff[0:len(self.send_data_buff)], hash=0)
                 pkt.hash = binascii.crc32(pkt.__serialize__()) & 0xffffffff
                 self.send_data_buff = b""
             if self.recv_next == 2 ** 32:
