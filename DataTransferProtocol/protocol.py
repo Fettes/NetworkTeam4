@@ -303,7 +303,7 @@ class POOP(StackingProtocol):
                 handshake_pkt.__serialize__()) & 0xffffffff
             self.transport.write(handshake_pkt.__serialize__())
             count += 1
-            await asyncio.sleep(1)  # - (time.time() - self.last_recv))
+            await asyncio.sleep(5)  # - (time.time() - self.last_recv))
 
         # this function is called when the other side initiate a shutdown (received when status == ESTABLISHED)
 
