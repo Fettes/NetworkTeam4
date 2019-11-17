@@ -526,7 +526,7 @@ class POOP(StackingProtocol):
             self.send_packet_time = time.time()
             self.transport.write(pkt.__serialize__())
             print("OUT: SEQ=" + str(pkt.seq))
-            # self.loop.create_task(self.wait_ack_timeout(pkt))
+
 
 
 PassthroughClientFactory = StackingProtocolFactory.CreateFactoryType(
