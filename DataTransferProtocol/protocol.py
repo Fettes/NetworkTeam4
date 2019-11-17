@@ -259,15 +259,18 @@ class POOP(StackingProtocol):
         self.deserializer.update(buffer)
         for pkt in self.deserializer.nextPackets():
             pkt_type = pkt.DEFINITION_IDENTIFIER
+
             if not pkt_type:  # NOTE: not sure if this is necessary
                 print("{} POOP error: the recv pkt don't have a DEFINITION_IDENTIFIER")
                 return
-            logger.debug("{} POOP the pkt name is: {}".format(
-                self._mode, pkt_type))
+
+            logger.debug("{} POOP the pkt name is: {}".format(self._mode, pkt_type))
+
             if pkt_type == "poop.handshakepacket":
                 self.last_recv = time.time()
                 self.handshake_pkt_recv(pkt)
                 continue
+
             if pkt_type == "poop.datapacket":
                 print(pkt.ACK)
                 if self.status == 'FIN_SENT':
@@ -275,12 +278,14 @@ class POOP(StackingProtocol):
                 self.last_recv = time.time()
                 self.data_pkt_recv(pkt)
                 continue
+
             if pkt_type == "poop.shutdownpacket":
                 if self.status == 'FIN_SENT':
                     self.shutdown_ack_recv(pkt)
                 self.last_recv = time.time()
                 self.init_shutdown_pkt_recv(pkt)
                 continue
+
             else:
                 print("{} POOP error: the recv pkt name: \"{}\" this is unexpected".format(
                     self._mode, pkt_type))
@@ -423,26 +428,19 @@ class POOP(StackingProtocol):
                     print(error)
 
     def data_pkt_recv(self, pkt):
-        # Drop if not a datapacket
-        if pkt.DEFINITION_IDENTIFIER != "poop.datapacket":
-            return
-        # if len(pkt.data) == 0:
-        #     return
-        # If ACK is set, handle ACK
+        # if it is a ACK packet
         if pkt.ACK:
-
             if pkt.seq or pkt.data:
                 return
             # Check hash, drop if invalid
             pkt_copy = DataPacket(ACK=pkt.ACK, hash=0)
-            if binascii.crc32(
-                    pkt_copy.__serialize__()) & 0xffffffff != pkt.hash:
-                print("Wrong hash in ACK")
+            if binascii.crc32(pkt_copy.__serialize__()) & 0xffffffff != pkt.hash:
+                print("Received Wrong hash")
                 return
             # If ACK matches seq of a pkt in send queue, take off of send queue, and update send queue
             if pkt.ACK == self.send_packet.seq:
                 self.send_packet = None
-                self.queue_send_pkts()
+                self.send_pkts()
                 print("IN: ACK=" + str(pkt.ACK))
 
             else:
@@ -458,7 +456,6 @@ class POOP(StackingProtocol):
         #     return
 
         print("IN: SEQ=" + str(pkt.seq))
-
         ack_pkt = DataPacket(ACK=pkt.seq, hash=0)
         ack_pkt.hash = binascii.crc32(ack_pkt.__serialize__()) & 0xffffffff
         self.transport.write(ack_pkt.__serialize__())
@@ -508,7 +505,7 @@ class POOP(StackingProtocol):
             print(self.send_packet)
             self.loop.create_task(self.shutdown_send_wait())
 
-    def queue_send_pkts(self):
+    def send_pkts(self):
         while self.send_data_buff and not self.send_packet:
             if len(self.send_data_buff) >= 15000:
                 # result = isinstance(self.send_data_buff[0:15000],bytes)
