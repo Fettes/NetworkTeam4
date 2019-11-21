@@ -93,25 +93,25 @@ class CRAP(StackingProtocol):
         )
         return cert
 
-    def GenerateKey(self):
-        DH_private = ec.generate_private_key(ec.SECP384R1(), default_backend())
-        DH_public = DH_private.public_key()
-        RSA_private = rsa.generate_private_key(public_exponent=65537, key_size=2048,backend=default_backend())
-        RSA_public = RSA_private.public_key()
-        return DH_private, DH_public, RSA_private, RSA_public
-
-    def GenerateCertChain(self):
-        cert_root = open("20194_root.cert", 'rb').read()
-        cert_team = open("csr_team4_signed.cert", 'rb').read()
-        private_key_team_rd = open("key_team4.pem", 'rb').read()
-        cert_root_pem = x509.load_pem_x509_certificate(cert_root, default_backend())
-        cert_team_pem= x509.load_pem_x509_certificate(cert_team, default_backend())
-        private_key_team_pem = load_pem_private_key(private_key_team_rd,
-                                                password=b'passphrase',
-                                                backend=default_backend())
-        return cert_team, cert_root_pem, cert_team_pem, private_key_team_pem
-
-        print("----------Wayne get the cert!-----------")
+    # def GenerateKey(self):
+    #     DH_private = ec.generate_private_key(ec.SECP384R1(), default_backend())
+    #     DH_public = DH_private.public_key()
+    #     RSA_private = rsa.generate_private_key(public_exponent=65537, key_size=2048,backend=default_backend())
+    #     RSA_public = RSA_private.public_key()
+    #     return DH_private, DH_public, RSA_private, RSA_public
+    #
+    # def GenerateCertChain(self):
+    #     cert_root = open("20194_root.cert", 'rb').read()
+    #     cert_team = open("csr_team4_signed.cert", 'rb').read()
+    #     private_key_team_rd = open("key_team4.pem", 'rb').read()
+    #     cert_root_pem = x509.load_pem_x509_certificate(cert_root, default_backend())
+    #     cert_team_pem= x509.load_pem_x509_certificate(cert_team, default_backend())
+    #     private_key_team_pem = load_pem_private_key(private_key_team_rd,
+    #                                             password=b'passphrase',
+    #                                             backend=default_backend())
+    #     return cert_team, cert_root_pem, cert_team_pem, private_key_team_pem
+    #
+    #     print("----------Wayne get the cert!-----------")
 
     # def connection_made(self, transport):
     #     #logger.debug("{} Crap: connection made".format(self.mode))
