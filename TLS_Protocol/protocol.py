@@ -159,7 +159,7 @@ class CRAP(StackingProtocol):
 
             # Generate packet
             new_secure_packet = HandshakePacket(status=0, pk=self.dataA, signature=sigA, nonce=tmp_nonceA, cert=certA,
-                                                certChain=self.certChain)
+                                                certChain=self.cert_chain)
             self.transport.write(new_secure_packet.__serialize__())
 
             print("client hello sending finished!!!")
@@ -296,7 +296,7 @@ class CRAP(StackingProtocol):
 
                 new_secure_packet = HandshakePacket(status=1, pk=self.dataB, signature=sigB, nonce=tmp_nonceB,
                                                     nonceSignature=nonceSignatureB, cert=certB,
-                                                    certChain=self.certChain)
+                                                    certChain=self.cert_chain)
 
                 self.transport.write(new_secure_packet.__serialize__())
 
