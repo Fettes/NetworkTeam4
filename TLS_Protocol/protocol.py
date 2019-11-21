@@ -314,7 +314,8 @@ class CRAP(StackingProtocol):
                     new_secure_packet = HandshakePacket(status=2)
                     self.transport.write(new_secure_packet.__serialize__())
                     self.transport.close()
-                print("Handshake complete")
+
+                print("Server Handshake complete")
 
         if self.mode == "client":
             if packet.status == 1:
@@ -360,6 +361,33 @@ class CRAP(StackingProtocol):
 
                 new_secure_packet = HandshakePacket(status=1, nonceSignature=nonceSignatureA)
                 self.transport.write(new_secure_packet.__serialize__())
+
+                print("Client Handshake complete")
+
+                # Start Generate hash --------------------------------------------------
+
+                # Create hash 1, IVA, IVB
+                digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+                digest.update(self.shared_key)
+                hash1 = digest.finalize()
+                ivA = hash1[0:12]
+                ivB = hash1[12:24]
+
+                # Create hash2, encA
+                digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+                digest.update(hash1)
+
+
+
+
+
+
+
+            else:
+                logger.debug("client wrong!")
+                new_secure_packet = HandshakePacket(status=2)
+                self.transport.write(new_secure_packet.__serialize__())
+                self.transport.close()
 
 
 SecureClientFactory = StackingProtocolFactory.CreateFactoryType(lambda: POOP(mode="client"),
