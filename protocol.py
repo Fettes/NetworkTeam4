@@ -46,8 +46,8 @@ class HandshakePacket(CrapPacketType):
         ("nonceSignature", BUFFER({Optional: True})),
         ("signature", BUFFER({Optional: True})),
         ("pk", BUFFER({Optional: True})),
-        ("cert", BUFFER({Optional: True}))
-        ("certChain", LIST(BUFFER, {Optional:True}))
+        ("cert", BUFFER({Optional: True})),
+        ("certChain", LIST(BUFFER, {Optional: True}))
     ]
 
 
@@ -56,8 +56,16 @@ class DataPacket(CrapPacketType):
     DEFINITION_VERSION = "1.0"
     FIELDS = [
         ("data", BUFFER),
-        ("signature", BUFFER),
     ]
+
+
+class ErrorPacket(CrapPacketType):
+    DEFINITION_IDENTIFIER = "crap.errorpacket”"
+    DEFINITION_VERSION = "1.0"
+    FIELDS = [
+        ("message", STRING),
+    ]
+
 
 
 # class CRAP(StackingProtocol):
