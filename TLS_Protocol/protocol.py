@@ -191,6 +191,10 @@ class CRAP(StackingProtocol):
                 return
 
     def crap_handshake_recv(self, packet):
+        if self.crap_status == "ESTABLISHED":
+            logger.debug("recvive a handshake packet when connect ESTABLISHED")
+            return
+
         if self.mode == "server":
             if packet.status == 0:
                 logger.debug("Server start Hello")
@@ -317,6 +321,32 @@ class CRAP(StackingProtocol):
 
                 print("Server Handshake complete")
 
+                # Start Generate hash --------------------------------------------------
+
+                # Create hash 1, IVA, IVB
+                digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+                digest.update(self.shared_key)
+                hash1 = digest.finalize()
+                self.ivA = hash1[0:12]
+                self.ivB = hash1[12:24]
+                print("server iva:", self.ivA)
+                print("server ivb:", self.ivB)
+
+                # Create hash2, encA
+                digest.update(hash1)
+                hash2 = digest.finalize()
+                decB = hash2[0:16]
+                print("server dec:", decB)
+
+                # Create hash3, decA
+                digest.update(hash2)
+                hash3 = digest.finalize()
+                encB = hash3[0:16]
+                print("server enc:", encB)
+
+                self.crap_status = "ESTABLISHED"
+                self.higherProtocol().connection_made(self.higher_transport)
+
         if self.mode == "client":
             if packet.status == 1:
                 certification = x509.load_pem_x509_certificate(packet.cert, default_backend())
@@ -370,18 +400,25 @@ class CRAP(StackingProtocol):
                 digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
                 digest.update(self.shared_key)
                 hash1 = digest.finalize()
-                ivA = hash1[0:12]
-                ivB = hash1[12:24]
+                self.ivA = hash1[0:12]
+                self.ivB = hash1[12:24]
+                print("client iva:", self.ivA)
+                print("client ivb:", self.ivB)
 
                 # Create hash2, encA
-                digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
                 digest.update(hash1)
+                hash2 = digest.finalize()
+                encA = hash2[0:16]
+                print("client enc:", encA)
 
+                # Create hash3, decA
+                digest.update(hash2)
+                hash3 = digest.finalize()
+                decA = hash3[0:16]
+                print("client dec:", decA)
 
-
-
-
-
+                self.crap_status = "ESTABLISHED"
+                self.higherProtocol().connection_made(self.higher_transport)
 
             else:
                 logger.debug("client wrong!")
