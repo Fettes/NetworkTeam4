@@ -28,7 +28,6 @@ import random
 logger = logging.getLogger("playground.__connector__." + __name__)
 
 
-
 class CrapPacketType(PacketType):
     DEFINITION_IDENTIFIER = "crap"
     DEFINITION_VERSION = "1.0"
@@ -67,21 +66,21 @@ class ErrorPacket(CrapPacketType):
     ]
 
 
-
 class CRAP(StackingProtocol):
     def __init__(self, mode):
-        #logger.debug("{} Crap: init protocol".format(mode))
+        # logger.debug("{} Crap: init protocol".format(mode))
         super().__init__()
         self.mode = mode
         self.Desrialize_Packet = CrapPacketType.Deserializer()
 
     def GenerateCert(self, publickey, privatekey, issuer):
-        subject = x509.Name([x509.NameAttribute(NameOID.COUNTRY_NAME, u"US"),
-                             x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"MD"),
-                             x509.NameAttribute(NameOID.LOCALITY_NAME, u"Baltimore"),
-                             x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"JHU"),
-                             x509.NameAttribute(NameOID.COMMON_NAME, u"20194.4.4.4"),
+        subject = x509.Name([x509.NameAttribute(NameOID.COUNTRY_NAME, u"CN"),
+                             x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Tianjin"),
+                             x509.NameAttribute(NameOID.LOCALITY_NAME, u"Tanggu"),
+                             x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"The Johns Hopkins University"),
+                             x509.NameAttribute(NameOID.COMMON_NAME, u"20194.5.20.30"),
                              ])
+
         cert = x509.CertificateBuilder().subject_name(
             subject
         ).issuer_name(
@@ -104,7 +103,7 @@ class CRAP(StackingProtocol):
     def GenerateKey(self):
         DH_private = ec.generate_private_key(ec.SECP384R1(), default_backend())
         DH_public = DH_private.public_key()
-        RSA_private = rsa.generate_private_key(public_exponent=65537, key_size=2048,backend=default_backend())
+        RSA_private = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
         RSA_public = RSA_private.public_key()
         return DH_private, DH_public, RSA_private, RSA_public
 
@@ -113,16 +112,16 @@ class CRAP(StackingProtocol):
         cert_team = open("csr_team4_signed.cert", 'rb').read()
         private_key_team_rd = open("key_team4.pem", 'rb').read()
         cert_root_pem = x509.load_pem_x509_certificate(cert_root, default_backend())
-        cert_team_pem= x509.load_pem_x509_certificate(cert_team, default_backend())
+        cert_team_pem = x509.load_pem_x509_certificate(cert_team, default_backend())
         private_key_team_pem = load_pem_private_key(private_key_team_rd,
-                                                password=b'passphrase',
-                                                backend=default_backend())
+                                                    password=b'passphrase',
+                                                    backend=default_backend())
         return cert_team, cert_root_pem, cert_team_pem, private_key_team_pem
 
         print("----------Wayne get the cert!-----------")
 
     def connection_made(self, transport):
-        #logger.debug("{} Crap: connection made".format(self.mode))
+        # logger.debug("{} Crap: connection made".format(self.mode))
         self.transport = transport
         print('---------------Wayne Start---------------')
         if self.mode == "client":
@@ -130,11 +129,13 @@ class CRAP(StackingProtocol):
 
             self.DH_private_key_client, self.DH_public_key_client, self.RSA_private_key_client, self.RSA_public_key_client = self.GenerateKey()
 
-            DH_public_key_client_trans = self.DH_public_key_client.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
+            DH_public_key_client_trans = self.DH_public_key_client.public_bytes(Encoding.PEM,
+                                                                                PublicFormat.SubjectPublicKeyInfo)
 
             Signature_client = self.RSA_private_key_client.sign(DH_public_key_client_trans,
-                                    padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-                                    hashes.SHA256())
+                                                                padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                                            salt_length=padding.PSS.MAX_LENGTH),
+                                                                hashes.SHA256())
 
             gen_nonce_client = random.randint(0, 1000)
             self.nonce_client = str(gen_nonce_client).encode('ASCII')
@@ -143,7 +144,7 @@ class CRAP(StackingProtocol):
 
             cert_client = self.GenerateCert(self.RSA_public_key_client,
                                             private_key_team_client,
-                                            cert_team_client.subject()).public_bytes(Encoding.PEM)
+                                            cert_team_client.subject).public_bytes(Encoding.PEM)
 
             self.chain_client = [cert_team_client_b]
 
@@ -158,7 +159,7 @@ class CRAP(StackingProtocol):
             self.transport.write(client_packet_trans)
 
     def data_received(self, buffer):
-        #logger.debug("{} Crap recv a buffer of size {}".format(self.mode, len(buffer)))
+        # logger.debug("{} Crap recv a buffer of size {}".format(self.mode, len(buffer)))
         self.Desrialize_Packet.update(buffer)
         packet_recieve = self.Desrialize_Packet.nextPackets()
         for p in packet_recieve:
@@ -181,11 +182,11 @@ class CRAP(StackingProtocol):
 
                 cert_team_server_b, cert_root_server, cert_team_server, private_key_team_server = self.GenerateCertChain()
 
-
                 try:
                     self.public_key_extract_client.verify(packet.signature, packet.pk,
-                                              padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
-                                                          salt_length=padding.PSS.MAX_LENGTH), hashes.SHA256())
+                                                          padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                                      salt_length=padding.PSS.MAX_LENGTH),
+                                                          hashes.SHA256())
 
                     add_team = cert_team_server.subject.get_attributes_for_aid(NameOID.COMMON_NAME)[0].value
                     add_recieve = cert_client.subject.get_attributes_for_aid(NameOID.COMMON_NAME)[0].value
@@ -205,10 +206,10 @@ class CRAP(StackingProtocol):
                 DH_public_key_server_trans = self.DH_public_key_server.public_bytes(Encoding.PEM,
                                                                                     PublicFormat.SubjectPublicKeyInfo)
 
-                Signature_server= self.RSA_private_key_server.sign(DH_public_key_server_trans,
-                                                             padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
-                                                                         salt_length=padding.PSS.MAX_LENGTH),
-                                                             hashes.SHA256())
+                Signature_server = self.RSA_private_key_server.sign(DH_public_key_server_trans,
+                                                                    padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                                                salt_length=padding.PSS.MAX_LENGTH),
+                                                                    hashes.SHA256())
 
                 self.chain_server = [cert_team_server_b]
 
@@ -219,8 +220,7 @@ class CRAP(StackingProtocol):
 
                 cert_server = self.GenerateCert(self.RSA_public_key_server,
                                                 private_key_team_server,
-                                                cert_team_server.subject()).public_bytes(Encoding.PEM)
-
+                                                cert_team_server.subject).public_bytes(Encoding.PEM)
 
                 nonceSignature_server = self.RSA_private_key_server.sign(nonce_client,
                                                                          padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
@@ -286,22 +286,19 @@ class CRAP(StackingProtocol):
                 self.transport.write(client_packet_1_trans)
                 self.transport.close()
 
-
             nonce_server = str(packet.nonce).encode('ASCII')
 
             nonceSignature_client = self.RSA_private_key_client.sign(nonce_server,
-                                               padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
-                                                           salt_length=padding.PSS.MAX_LENGTH),
-                                               hashes.SHA256())
+                                                                     padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
+                                                                                 salt_length=padding.PSS.MAX_LENGTH),
+                                                                     hashes.SHA256())
 
             new_secure_packet = HandshakePacket(status=1, nonceSignature=nonceSignature_client)
             self.transport.write(new_secure_packet.__serialize__())
 
 
 SecureClientFactory = StackingProtocolFactory.CreateFactoryType(lambda: POOP(mode="client"),
-                                                            lambda: CRAP(mode="client"))
+                                                                lambda: CRAP(mode="client"))
 
 SecureServerFactory = StackingProtocolFactory.CreateFactoryType(lambda: POOP(mode="server"),
-                                                            lambda: CRAP(mode="server"))
-                                                                    
-
+                                                                lambda: CRAP(mode="server"))
