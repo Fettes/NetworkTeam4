@@ -76,12 +76,12 @@ class CRAP(StackingProtocol):
         self.Desrialize_Packet = CrapPacketType.Deserializer()
 
     def GenerateCert(self, publickey, privatekey, issuer):
-        subject = x509.Name([x509.NameAttribute(NameOID.COUNTRY_NAME, u"CN"),
-                                      x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Tianjin"),
-                                      x509.NameAttribute(NameOID.LOCALITY_NAME, u"Tanggu"),
-                                      x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"The Johns Hopkins University"),
-                                      x509.NameAttribute(NameOID.COMMON_NAME, u"20194.5.20.30"),
-                                      ])
+        subject = x509.Name([x509.NameAttribute(NameOID.COUNTRY_NAME, u"US"),
+                             x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"MD"),
+                             x509.NameAttribute(NameOID.LOCALITY_NAME, u"Baltimore"),
+                             x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"JHU"),
+                             x509.NameAttribute(NameOID.COMMON_NAME, u"20194.4.4.4"),
+                             ])
         cert = x509.CertificateBuilder().subject_name(
             subject
         ).issuer_name(
