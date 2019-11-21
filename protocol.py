@@ -149,19 +149,19 @@ class CRAP(StackingProtocol):
 
             self.transport.write(client_packet_trans)
 
-    def data_received(self, buffer):
-        #logger.debug("{} Crap recv a buffer of size {}".format(self.mode, len(buffer)))
-        self.Desrialize_Packet.update(buffer)
-        packet_recieve = self.Desrialize_Packet.nextPackets()
-        for p in packet_recieve:
-            packet_type = p.DEFINITION_IDENTIFIER
-
-            if packet_type == "crap.handshakepacket":
-                self.CRAP_recieve(p)
-                continue
-            else:
-                return
-
+    # def data_received(self, buffer):
+    #     #logger.debug("{} Crap recv a buffer of size {}".format(self.mode, len(buffer)))
+    #     self.Desrialize_Packet.update(buffer)
+    #     packet_recieve = self.Desrialize_Packet.nextPackets()
+    #     for p in packet_recieve:
+    #         packet_type = p.DEFINITION_IDENTIFIER
+    #
+    #         if packet_type == "crap.handshakepacket":
+    #             self.CRAP_recieve(p)
+    #             continue
+    #         else:
+    #             return
+    #
     # def CRAP_recieve(self, packet):
     #     if self.mode == "server":
     #
