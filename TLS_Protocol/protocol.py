@@ -258,7 +258,7 @@ class CRAP(StackingProtocol):
                 builder = x509.CertificateBuilder()
                 builder = builder.subject_name(subject)
                 builder = builder.issuer_name(self.team4_cert.subject)  # change the issuer
-                builder = builder.public_key(self.pubk_sigA)  # put self pubk in cert
+                builder = builder.public_key(self.pubk_sigB)  # put self pubk in cert
                 builder = builder.serial_number(x509.random_serial_number())
                 builder = builder.not_valid_before(datetime.datetime.utcnow())
                 builder = builder.not_valid_after(datetime.datetime.utcnow() + datetime.timedelta(days=30))
