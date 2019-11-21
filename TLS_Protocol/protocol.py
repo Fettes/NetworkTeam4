@@ -324,22 +324,24 @@ class CRAP(StackingProtocol):
                 # Start Generate hash --------------------------------------------------
 
                 # Create hash 1, IVA, IVB
-                digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-                digest.update(self.shared_key)
-                hash1 = digest.finalize()
+                digest1 = hashes.Hash(hashes.SHA256(), backend=default_backend())
+                digest1.update(self.shared_key)
+                hash1 = digest1.finalize()
                 self.ivA = hash1[0:12]
                 self.ivB = hash1[12:24]
                 print("server iva:", self.ivA)
                 print("server ivb:", self.ivB)
 
                 # Create hash2, encA
-                digest.update(hash1)
-                hash2 = digest.finalize()
+                digest2 = hashes.Hash(hashes.SHA256(), backend=default_backend())
+                digest2.update(hash1)
+                hash2 = digest2.finalize()
                 decB = hash2[0:16]
                 print("server dec:", decB)
 
                 # Create hash3, decA
-                digest.update(hash2)
+                digest3 = hashes.Hash(hashes.SHA256(), backend=default_backend())
+                digest3.update(hash2)
                 hash3 = digest.finalize()
                 encB = hash3[0:16]
                 print("server enc:", encB)
@@ -397,23 +399,25 @@ class CRAP(StackingProtocol):
                 # Start Generate hash --------------------------------------------------
 
                 # Create hash 1, IVA, IVB
-                digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
-                digest.update(self.shared_key)
-                hash1 = digest.finalize()
+                digest1 = hashes.Hash(hashes.SHA256(), backend=default_backend())
+                digest1.update(self.shared_key)
+                hash1 = digest1.finalize()
                 self.ivA = hash1[0:12]
                 self.ivB = hash1[12:24]
                 print("client iva:", self.ivA)
                 print("client ivb:", self.ivB)
 
                 # Create hash2, encA
-                digest.update(hash1)
-                hash2 = digest.finalize()
+                digest2 = hashes.Hash(hashes.SHA256(), backend=default_backend())
+                digest2.update(hash1)
+                hash2 = digest2.finalize()
                 encA = hash2[0:16]
                 print("client enc:", encA)
 
                 # Create hash3, decA
-                digest.update(hash2)
-                hash3 = digest.finalize()
+                digest3 = hashes.Hash(hashes.SHA256(), backend=default_backend())
+                digest3.update(hash2)
+                hash3 = digest3.finalize()
                 decA = hash3[0:16]
                 print("client dec:", decA)
 
