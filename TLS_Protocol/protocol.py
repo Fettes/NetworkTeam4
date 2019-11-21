@@ -342,7 +342,7 @@ class CRAP(StackingProtocol):
                 # Create hash3, decA
                 digest3 = hashes.Hash(hashes.SHA256(), backend=default_backend())
                 digest3.update(hash2)
-                hash3 = digest.finalize()
+                hash3 = digest3.finalize()
                 encB = hash3[0:16]
                 print("server enc:", encB)
 
