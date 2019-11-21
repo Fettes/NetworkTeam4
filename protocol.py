@@ -60,38 +60,38 @@ class DataPacket(CrapPacketType):
     ]
 
 
-class CRAP(StackingProtocol):
-    def __init__(self, mode):
-        #logger.debug("{} Crap: init protocol".format(mode))
-        super().__init__()
-        self.mode = mode
-        self.Desrialize_Packet = CrapPacketType.Deserializer()
-
-    def GenerateCert(self, publickey, privatekey, issuer):
-        subject = x509.Name([x509.NameAttribute(NameOID.COUNTRY_NAME, u"CN"),
-                                      x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Tianjin"),
-                                      x509.NameAttribute(NameOID.LOCALITY_NAME, u"Tanggu"),
-                                      x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"The Johns Hopkins University"),
-                                      x509.NameAttribute(NameOID.COMMON_NAME, u"20194.5.20.30"),
-                                      ])
-        cert = x509.CertificateBuilder().subject_name(
-            subject
-        ).issuer_name(
-            issuer
-        ).public_key(
-            publickey
-        ).serial_number(
-            x509.random_serial_number()
-        ).not_valid_before(
-            datetime.datetime.utcnow()
-        ).not_valid_after(
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)  # Our certificate will be valid for 10 days
-        ).sign(  # Sign our certificate with our private key
-            private_key=privatekey,
-            algorithm=hashes.SHA256(),
-            backend=default_backend()
-        )
-        return cert
+# class CRAP(StackingProtocol):
+#     def __init__(self, mode):
+#         #logger.debug("{} Crap: init protocol".format(mode))
+#         super().__init__()
+#         self.mode = mode
+#         self.Desrialize_Packet = CrapPacketType.Deserializer()
+#
+#     def GenerateCert(self, publickey, privatekey, issuer):
+#         subject = x509.Name([x509.NameAttribute(NameOID.COUNTRY_NAME, u"CN"),
+#                                       x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Tianjin"),
+#                                       x509.NameAttribute(NameOID.LOCALITY_NAME, u"Tanggu"),
+#                                       x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"The Johns Hopkins University"),
+#                                       x509.NameAttribute(NameOID.COMMON_NAME, u"20194.5.20.30"),
+#                                       ])
+#         cert = x509.CertificateBuilder().subject_name(
+#             subject
+#         ).issuer_name(
+#             issuer
+#         ).public_key(
+#             publickey
+#         ).serial_number(
+#             x509.random_serial_number()
+#         ).not_valid_before(
+#             datetime.datetime.utcnow()
+#         ).not_valid_after(
+#             datetime.datetime.utcnow() + datetime.timedelta(days=10)  # Our certificate will be valid for 10 days
+#         ).sign(  # Sign our certificate with our private key
+#             private_key=privatekey,
+#             algorithm=hashes.SHA256(),
+#             backend=default_backend()
+#         )
+#         return cert
 
     # def GenerateKey(self):
     #     DH_private = ec.generate_private_key(ec.SECP384R1(), default_backend())
