@@ -15,9 +15,9 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.serialization import Encoding, load_pem_public_key
+from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.hazmat.primitives.serialization import PublicFormat
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
+from cryptography.hazmat.primitives.serialization import load_pem_public_key
 from cryptography import x509
 from cryptography.x509.oid import NameOID
 
@@ -79,8 +79,7 @@ class CRAP(StackingProtocol):
             pubkA = self.privkA.public_key()
 
             # Create pk in packet (serialization)
-            tmp_pubkA = pubkA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
-            self.dataA = tmp_pubkA
+            self.dataA = pubkA.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
 
             # Create long term key for signing
             self.signkA = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
@@ -154,15 +153,14 @@ class CRAP(StackingProtocol):
                     self.transport.write(new_secure_packet.__serialize__())
                     self.transport.close()
 
-                # Create Server long term key
+                # Create Server ephemeral key key
                 privkB = ec.generate_private_key(ec.SECP384R1(), default_backend())
                 pubkB = privkB.public_key()
 
                 # Create pk in packet (serialization)
-                tmp_pubkB = pubkB.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
-                self.dataB = tmp_pubkB
+                self.dataB = pubkB.public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
 
-                # Create ephemeral key for signing
+                # Create long term for signing
                 self.signkB = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
                 self.pubk_sigB = self.signkB.public_key()
 
@@ -180,6 +178,7 @@ class CRAP(StackingProtocol):
                 nonceA = str(packet.nonce).encode('ASCII')
 
                 # Generate shared key
+                # server_shared_key = privkB.exchange(ec.ECDH(), self.pubk_sigB)
                 # pubkB_recv = load_pem_public_key(packet.pk, backend=default_backend())
                 # server_shared_key = privkB.exchange(ec.ECDH, pubkB_recv)
 
@@ -204,7 +203,6 @@ class CRAP(StackingProtocol):
                 certB = certificate.public_bytes(Encoding.PEM)
 
                 # Create nonceSignatureB (bytes)
-
                 nonceSignatureB = self.signkB.sign(nonceA,
                                                    padding.PSS(mgf=padding.MGF1(hashes.SHA256()),
                                                                salt_length=padding.PSS.MAX_LENGTH),
