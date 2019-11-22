@@ -368,11 +368,11 @@ class CRAP(StackingProtocol):
                     recv_addr = certification.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
                     print("Team address:", team4_addr)
                     print("Client address:", recv_addr)
-                    if team4_addr in recv_addr:
-                        print("Verify success")
-                        pass
-                    else:
-                        raise
+                    # if team4_addr in recv_addr:
+                    #     print("Verify success")
+                    #     pass
+                    # else:
+                    #     raise
 
                 except Exception as error:
                     logger.debug("client verify failed because wrong signature")
