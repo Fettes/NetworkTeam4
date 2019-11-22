@@ -9,7 +9,7 @@ import time
 import asyncio
 from random import randrange
 from playground.network.packet import PacketType
-from playground.network.packet.fieldtypes import UINT8, UINT32, STRING, BUFFER
+from playground.network.packet.fieldtypes import UINT8, UINT32, STRING, BUFFER, LIST
 from playground.network.packet.fieldtypes.attributes import Optional
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -234,7 +234,7 @@ class crapHandshake(StackingProtocol):
 
                 # Generate shared key
                 tmp_pubk = load_pem_public_key(packet.pk, backend=default_backend())
-                self.shared_key = self.server_pubKey_eph.exchange(ec.ECDH(), tmp_pubk)
+                self.shared_key = self.server_privKey_eph.exchange(ec.ECDH(), tmp_pubk)
 
                 # create signature
                 serverSignature = self.server_privKey_longTerm.sign(self.server_pkData,
@@ -342,7 +342,7 @@ class crapHandshake(StackingProtocol):
 
             # Generate shared key
             tmp_pubk = load_pem_public_key(packet.pk, backend=default_backend())
-            self.shared_key = self.client_pubKey_eph.exchange(ec.ECDH(), tmp_pubk)
+            self.shared_key = self.client_privKey_eph.exchange(ec.ECDH(), tmp_pubk)
 
             # server nonce
             server_nonce = str(packet.nonce).encode('ASCII')
