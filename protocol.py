@@ -402,7 +402,7 @@ class crapHandshake(StackingProtocol):
         new_packet = DataPacket(data=encData)
         self.transport.write(new_packet.__serialize__())
 
-    def crap_data_recv(self, packet):
+    def tls_datareceived(self, packet):
         if self.mode == "server":
             aesgcm = AESGCM(self.decB)
             try:
