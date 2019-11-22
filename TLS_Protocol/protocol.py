@@ -20,6 +20,7 @@ from cryptography.hazmat.primitives.serialization import PublicFormat
 from cryptography.hazmat.primitives.serialization import load_pem_public_key, load_pem_private_key
 from cryptography import x509
 from cryptography.x509.oid import NameOID
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 import binascii
 import bisect
@@ -336,15 +337,15 @@ class CRAP(StackingProtocol):
                 digest2 = hashes.Hash(hashes.SHA256(), backend=default_backend())
                 digest2.update(hash1)
                 hash2 = digest2.finalize()
-                decB = hash2[0:16]
-                print("server dec:", decB)
+                self.decB = hash2[0:16]
+                print("server dec:", self.decB)
 
                 # Create hash3, decA
                 digest3 = hashes.Hash(hashes.SHA256(), backend=default_backend())
                 digest3.update(hash2)
                 hash3 = digest3.finalize()
-                encB = hash3[0:16]
-                print("server enc:", encB)
+                self.encB = hash3[0:16]
+                print("server enc:", self.encB)
 
                 self.crap_status = "ESTABLISHED"
                 self.higherProtocol().connection_made(self.higher_transport)
@@ -411,15 +412,15 @@ class CRAP(StackingProtocol):
                 digest2 = hashes.Hash(hashes.SHA256(), backend=default_backend())
                 digest2.update(hash1)
                 hash2 = digest2.finalize()
-                encA = hash2[0:16]
-                print("client enc:", encA)
+                self.encA = hash2[0:16]
+                print("client enc:", self.encA)
 
                 # Create hash3, decA
                 digest3 = hashes.Hash(hashes.SHA256(), backend=default_backend())
                 digest3.update(hash2)
                 hash3 = digest3.finalize()
-                decA = hash3[0:16]
-                print("client dec:", decA)
+                self.decA = hash3[0:16]
+                print("client dec:", self.decA)
 
                 self.crap_status = "ESTABLISHED"
                 self.higherProtocol().connection_made(self.higher_transport)
@@ -429,6 +430,47 @@ class CRAP(StackingProtocol):
                 new_secure_packet = HandshakePacket(status=2)
                 self.transport.write(new_secure_packet.__serialize__())
                 self.transport.close()
+
+    def send(self, data):
+        if self.mode == "client":
+            aesgcm = AESGCM(self.encA)
+            encDataA = aesgcm.encrypt(self.ivA, data, None)
+            self.ivA = (int.from_bytes(self.ivA, "big") + 1).to_bytes(12, "big")
+            new_packet = DataPacket(data=encDataA)
+            self.transport.write(new_packet.__serialize__())
+            print("Client send encrypted data")
+
+        if self.mode == "server":
+            aesgcm = AESGCM(self.encB)
+            encDataB = aesgcm.encrypt(self.ivB, data, None)
+            self.ivB = (int.from_bytes(self.ivB, "big") + 1).to_bytes(12, "big")
+            new_packet = DataPacket(data=encDataB)
+            self.transport.write(new_packet.__serialize__())
+            print("server send encrypted data")
+
+    def crap_data_recv(self, packet):
+        if self.mode == "server":
+            aesgcm = AESGCM(self.decB)
+            try:
+                decDataB = aesgcm.decrypt(self.ivA, packet.data, None)
+
+            except Exception as error:
+                logger.debug("Decryption failed")
+
+            self.ivA = (int.from_bytes(self.ivA, "big") + 1).to_bytes(12, "big")
+            self.higherProtocol().data_received(decDataB)
+
+        if self.mode == "client":
+            aesgcm = AESGCM(self.decA)
+            try:
+                decDataA = aesgcm.decrypt(self.ivB, packet.data, None)
+
+            except Exception as error:
+                logger.debug("Decryption failed")
+
+            self.ivB = (int.from_bytes(self.ivB, "big") + 1).to_bytes(12, "big")
+            self.higherProtocol().data_received(decDataA)
+
 
 
 SecureClientFactory = StackingProtocolFactory.CreateFactoryType(lambda: POOP(mode="client"),
