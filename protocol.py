@@ -92,6 +92,8 @@ class crapHandshake(StackingProtocol):
     def connection_made(self, transport):
         logger.debug("{}Crap:connection made".format(self.mode))
         self.transport = transport
+        self.higher_transport = CRAPTransport(transport)
+        self.higher_transport.connect_protocol(self)
         print("connection made print")
 
         if self.mode == "client":
