@@ -76,7 +76,7 @@ class CRAPTransport(StackingTransport):
         self.protocol.send(data)
 
     def close(self):
-        self.protocol.init_close()
+        self.protocol.transport.close()
 
 
 # ------------------------------------------Secure Protocol
