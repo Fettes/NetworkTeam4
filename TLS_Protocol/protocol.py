@@ -455,7 +455,7 @@ class CRAP(StackingProtocol):
                 decDataB = aesgcm.decrypt(self.ivA, packet.data, None)
 
             except Exception as error:
-                logger.debug("Decryption failed")
+                logger.debug("Server Decryption failed")
 
             self.ivA = (int.from_bytes(self.ivA, "big") + 1).to_bytes(12, "big")
             self.higherProtocol().data_received(decDataB)
@@ -466,7 +466,7 @@ class CRAP(StackingProtocol):
                 decDataA = aesgcm.decrypt(self.ivB, packet.data, None)
 
             except Exception as error:
-                logger.debug("Decryption failed")
+                logger.debug("Client Decryption failed")
 
             self.ivB = (int.from_bytes(self.ivB, "big") + 1).to_bytes(12, "big")
             self.higherProtocol().data_received(decDataA)
