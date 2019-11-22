@@ -234,7 +234,7 @@ class crapHandshake(StackingProtocol):
 
                 # Generate shared key
                 tmp_pubk = load_pem_public_key(packet.pk, backend=default_backend())
-                self.shared_key = self.privkB.exchange(ec.ECDH(), tmp_pubk)
+                self.shared_key = self.server_pubKey_eph.exchange(ec.ECDH(), tmp_pubk)
 
                 # create signature
                 serverSignature = self.server_privKey_longTerm.sign(self.server_pkData,
@@ -342,7 +342,7 @@ class crapHandshake(StackingProtocol):
 
             # Generate shared key
             tmp_pubk = load_pem_public_key(packet.pk, backend=default_backend())
-            self.shared_key = self.privkA.exchange(ec.ECDH(), tmp_pubk)
+            self.shared_key = self.client_pubKey_eph.exchange(ec.ECDH(), tmp_pubk)
 
             # server nonce
             server_nonce = str(packet.nonce).encode('ASCII')
