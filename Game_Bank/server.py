@@ -1,6 +1,9 @@
 """
 Escape Room Core
 """
+import os, sys
+sys.path.insert(0, os.path.abspath(".."))
+
 import asyncio
 from Game_Bank.prompt import *
 from Game_Bank.packet import *

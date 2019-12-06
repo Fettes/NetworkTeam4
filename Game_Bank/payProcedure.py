@@ -19,7 +19,7 @@ async def example_transfer(bank_client, src, dst, amount, memo):
         lambda: bank_client,
         bank_addr,
         bank_port,
-        family='default'
+        family='crap'
     )
     print("Connected. Logging in.")
 

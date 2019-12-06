@@ -2,7 +2,9 @@ import asyncio
 import playground
 from playground.network.packet import PacketType
 
-import sys
+import os, sys
+sys.path.insert(0, os.path.abspath(".."))
+
 from Game_Bank.payProcedure import *
 from Game_Bank.packet import *
 
@@ -57,7 +59,7 @@ class EchoClient(asyncio.Protocol):
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
 
-    coro = playground.create_connection(EchoClient, '20194.0.1.1', 8666)
+    coro = playground.create_connection(EchoClient, '20194.4.4.4', 8666)
 
     # loop.set_debug(enabled=True)
     # from playground.common.logging import EnablePresetLogging, PRESET_DEBUG
