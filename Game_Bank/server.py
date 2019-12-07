@@ -7,6 +7,8 @@ sys.path.insert(0, os.path.abspath(".."))
 import asyncio
 from Game_Bank.prompt import *
 from Game_Bank.packet import *
+from Game_Bank.payProcedure import *
+from Game_Bank.BankCore import *
 import playground
 
 
@@ -727,7 +729,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
             if isinstance(serverPacket, GameInitPacket):
                 username = process_game_init(serverPacket)
                 print(username)
-                game_packet = create_game_require_pay_packet('qazwsx.edc,rfvmtgbnyhujikolp', "tfeng7_account", 1)
+                game_packet = create_game_require_pay_packet('qazwsx.edc,rfvmtgbnyhujikolp', "tfeng7_account", 10)
                 self.transport.write(game_packet.__serialize__())
 
             if isinstance(serverPacket, GameCommandPacket):
@@ -736,9 +738,17 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
             if isinstance(serverPacket, GamePayPacket):
                 receipt, receipt_sig = process_game_pay_packet(serverPacket)
-                print(receipt)
-                print(receipt_sig)
-                asyncio.ensure_future(gameswitch(switch=1))
+                ledger_line = LedgerLineStorage.deserialize(receipt)
+                
+                req_amount = ledger_line.getTransactionAmount("tfeng7_account")
+                if req_amount == 10:
+                    print(receipt)
+                    print(receipt_sig)
+                    asyncio.ensure_future(gameswitch(switch=1))
+                else:
+                    result_temp = create_game_response("You didn't pay the money! Dude!", 0)
+                    self.transport.write(result_temp.__serialize__())
+                    self.transport.close()
 
                 def send_message(result):
                     # self.transport = Transport_method
@@ -776,7 +786,7 @@ async def gameswitch(switch):
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     # Each client connection will create a new protocol instance
-    coro = playground.create_server(EchoServerClientProtocol, 'localhost', 8666)
+    coro = playground.create_server(EchoServerClientProtocol, "localhost", port=8666, family="crap")
     server = loop.run_until_complete(coro)
 
     loop.set_debug(enabled=True)

@@ -39,7 +39,7 @@ class EchoClient(asyncio.Protocol):
 
 
     async def Create_Payment(self, account, amount, unique_id):
-        result = await paymentInit("tfeng7_account", account, amount, unique_id)
+        result = await paymentInit("tfeng7_account", account, 0, unique_id)
         print(result)
 
         receipt, receipt_sig = result
@@ -59,7 +59,7 @@ class EchoClient(asyncio.Protocol):
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
 
-    coro = playground.create_connection(EchoClient, '20194.4.4.4', 8666)
+    coro = playground.create_connection(EchoClient, 'crap://20194.4.4.4', 8666)
 
     # loop.set_debug(enabled=True)
     # from playground.common.logging import EnablePresetLogging, PRESET_DEBUG

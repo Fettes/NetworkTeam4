@@ -63,6 +63,7 @@ async def paymentInit(src, dst, amount, memo):
     password = getpass.getpass("Enter password for {}: ".format(username))
     bank_client = BankClientProtocol(bank_cert, username, password)
     result = await example_transfer(bank_client, src, dst, amount, memo)
+    print(result.Receipt)
 
     if result:
         example_verify(bank_client, result.Receipt, result.ReceiptSignature, dst, amount, memo)
