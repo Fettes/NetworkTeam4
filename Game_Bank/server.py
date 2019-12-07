@@ -741,14 +741,18 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 ledger_line = LedgerLineStorage.deserialize(receipt)
                 
                 req_amount = ledger_line.getTransactionAmount("tfeng7_account")
-                if req_amount == 10:
-                    print(receipt)
-                    print(receipt_sig)
-                    asyncio.ensure_future(gameswitch(switch=1))
-                else:
+                print(ledger_line.accounts)
+                
+                if ledger_line.accounts !="tfeng7_account":
+                    result_temp = create_game_response("who are you paying for?", 0)
+                    self.transport.write(result_temp.__serialize__())
+                    self.transport.close()
+                elif req_amount != 10:
                     result_temp = create_game_response("You didn't pay the money! Dude!", 0)
                     self.transport.write(result_temp.__serialize__())
                     self.transport.close()
+                else:
+                    asyncio.ensure_future(gameswitch(switch=1))
 
                 def send_message(result):
                     # self.transport = Transport_method

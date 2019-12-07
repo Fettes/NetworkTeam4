@@ -39,7 +39,7 @@ class EchoClient(asyncio.Protocol):
 
 
     async def Create_Payment(self, account, amount, unique_id):
-        result = await paymentInit("tfeng7_account", account, 0, unique_id)
+        result = await paymentInit("tfeng7_account", account, amount, unique_id)
         print(result)
 
         receipt, receipt_sig = result
