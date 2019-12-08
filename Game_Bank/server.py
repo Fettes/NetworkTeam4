@@ -3,13 +3,16 @@ Escape Room Core
 """
 import os, sys
 sys.path.insert(0, os.path.abspath(".."))
-
+import time
 import asyncio
 from Game_Bank.prompt import *
 from Game_Bank.packet import *
 from Game_Bank.payProcedure import *
 from Game_Bank.BankCore import *
 import playground
+
+quit_flag = 0
+pay_flag = 0
 
 
 # file = "playmusic.mp3"
@@ -695,6 +698,18 @@ class EscapeRoomGame:
             if not self.player["alive"]:
                 self.status = "escaped"
                 self.output("VICTORY! You escaped!")
+                team = connector[0].split(".")[1]
+                connection_made_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                with open('./tstest.txt', 'a') as f:
+                        f.write("team{}".format(team))
+                        f.write("   time:{}".format(connection_made_time))
+                        f.write("   quit success!!!")
+                        f.write("\n")
+                #quit_flag = quit_flag + 1
+                #with open('./tstest.txt','w') as f:
+                    #f.write("team{} quit time: {}".format.(team,quit_flag))
+
+                print("time:{}, team{}, connector:{}, quit success!!!".format(connection_made_time, team, connector))
 
 
 def game_next_input(game):
@@ -722,6 +737,8 @@ class EchoServerClientProtocol(asyncio.Protocol):
 
     def connection_made(self, transport):
         self.transport = transport
+        global connector
+        connector=transport.get_extra_info('peername')
 
     def data_received(self, data):
         self.deserializer.update(data)
@@ -741,20 +758,28 @@ class EchoServerClientProtocol(asyncio.Protocol):
                 ledger_line = LedgerLineStorage.deserialize(receipt)
                 
                 req_amount = ledger_line.getTransactionAmount("tfeng7_account")
-                print(ledger_line.accounts)
                 
-                if ledger_line.accounts !="tfeng7_account":
-                    result_temp = create_game_response("who are you paying for?", 0)
-                    self.transport.write(result_temp.__serialize__())
-                    self.transport.close()
-                elif req_amount != 10:
+                
+                if req_amount != 10:
                     result_temp = create_game_response("You didn't pay the money! Dude!", 0)
                     self.transport.write(result_temp.__serialize__())
                     self.transport.close()
                 else:
+                    team = connector[0].split(".")[1]
+                    connection_made_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    with open('./tstest.txt', 'a') as f:
+                        f.write("team{}".format(team))
+                        f.write("   time:{}".format(connection_made_time))
+                        f.write("   payment success!!!")
+                        f.write("\n")
+                    #pay_flag = pay_flag + 1
+                    #with open('./tstest.txt', 'w') as f:
+                        #f.write("team{} pay time: {}".format.(team,quit_flag))
+                
                     asyncio.ensure_future(gameswitch(switch=1))
 
                 def send_message(result):
+                    print("xxxxxxxxxxxxxxxxx")
                     # self.transport = Transport_method
                     print(result)
                     time.sleep(0.5)

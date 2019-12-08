@@ -1,0 +1,30 @@
+team4   time:2019-12-07 23:51:30   Connection made success!!!
+team4   time:2019-12-07 23:55:38   Connection made success!!!
+team4   time:2019-12-07 23:55:56   Connection made success!!!
+team4   time:2019-12-07 23:56:15   Connection made success!!!
+team4   time:2019-12-07 23:57:01   Connection made success!!!
+team4   time:2019-12-07 23:57:18   Connection made success!!!
+team4   time:2019-12-07 23:59:33   Connection made success!!!
+team4   time:2019-12-08 00:00:57   Connection made success!!!
+team4   time:2019-12-08 00:03:25   Connection made success!!!
+team4   time:2019-12-08 00:03:29   payment success!!!
+team4   time:2019-12-08 00:04:09   Connection made success!!!
+team4   time:2019-12-08 00:04:14   payment success!!!
+team4   time:2019-12-08 00:07:15   Connection made success!!!
+team4   time:2019-12-08 00:07:24   payment success!!!
+team4   time:2019-12-08 00:39:03   Connection made success!!!
+team4   time:2019-12-08 00:39:08   payment success!!!
+team4   time:2019-12-08 00:43:11   Connection made success!!!
+team4   time:2019-12-08 00:43:18   Connection made success!!!
+team4   time:2019-12-08 00:43:29   Connection made success!!!
+team4   time:2019-12-08 00:43:35   payment success!!!
+team4   time:2019-12-08 00:47:51   Connection made success!!!
+team4   time:2019-12-08 00:48:03   payment success!!!
+team4   time:2019-12-08 00:59:36   Connection made success!!!
+team4   time:2019-12-08 00:59:41   payment success!!!
+team4   time:2019-12-08 01:00:11   Connection made success!!!
+team4   time:2019-12-08 01:00:18   payment success!!!
+team4   time:2019-12-08 01:03:02   Connection made success!!!
+team4   time:2019-12-08 01:03:06   payment success!!!
+team4   time:2019-12-08 01:06:08   Connection made success!!!
+team4   time:2019-12-08 01:06:12   payment success!!!

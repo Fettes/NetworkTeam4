@@ -1,1 +1,296 @@
 nohup: ignoring input
+2019-12-07 16:51:30,403 - playground.network.devices.vnic.connect - DEBUG - Callback service new data connection on tcp port 40118
+2019-12-07 16:51:30,406 - playground.network.protocols.vsockets - INFO - Connect 1 callback 20194.4.4.4:8666 -> 20194.2.57.98:2117
+2019-12-07 16:51:30,406 - playground.network.devices.vnic.connect - DEBUG - Callback service setting up callback for connectionID 1, spawn port 40118
+2019-12-07 16:51:30,406 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Init Protocol Start: server <<<<<
+2019-12-07 16:51:30,407 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Init Protocol End: server <<<<<
+2019-12-07 16:51:30,407 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP: init protocol
+2019-12-07 16:51:30,407 - playground.network.devices.vnic.connect - DEBUG - Connection made on spawned port 40118 for stack [<connectors.poop.protocol.POOP object at 0x7f3924df59e8>,<connectors.crap.protocol.CRAP object at 0x7f3924df58d0>,<__main__.EchoServerClientProtocol object at 0x7f3925529e48>] 20194.4.4.4:8666 -> 20194.2.57.98:2117
+2019-12-07 16:51:30,407 - playground.network.protocols.vsockets - DEBUG - Creating tranport for higher protocol <connectors.poop.protocol.POOP object at 0x7f3924df59e8> with spawnport 40118
+2019-12-07 16:51:30,407 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP: connection made
+2019-12-07 16:51:30,408 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 58
+2019-12-07 16:51:30,408 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.handshakepacket
+2019-12-07 16:51:30,426 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40118
+2019-12-07 16:51:30,426 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 3047
+2019-12-07 16:51:30,427 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.handshakepacket
+2019-12-07 16:51:30,427 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Connection Made Start: server <<<<<
+2019-12-07 16:51:30,427 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Connection Made End: server <<<<<
+2019-12-07 16:51:30,427 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP: handshake success!
+2019-12-07 16:51:30,428 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 16:51:30,429 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 16:51:30,430 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send First Packet START <<<<<
+2019-12-07 16:51:30,431 - playground.__connector__.connectors.crap.protocol - DEBUG - -----BEGIN PUBLIC KEY-----
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEvYJ5Ey5vc0UPIikjR+yQqeagEW7si8Pu
+xnjX6CYGP2Wcc781iDWa/CDRNpzdXGJ2jPlfglouVauBqNUDLnKPRGd8JuTyJ2ys
+wO+Jh1+rhqeR1RWUBWCk3i9mkIeFM3F9
+-----END PUBLIC KEY-----
+
+2019-12-07 16:51:30,432 - playground.__connector__.connectors.crap.protocol - DEBUG - verify success !
+2019-12-07 16:51:30,522 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send First Packet END <<<<<
+2019-12-07 16:51:31,196 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40118
+2019-12-07 16:51:31,196 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 16:51:31,197 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 16:51:31,198 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40118
+2019-12-07 16:51:31,198 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 372
+2019-12-07 16:51:31,199 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 16:51:31,199 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 16:51:31,200 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send Second Packet START <<<<<
+2019-12-07 16:51:31,200 - playground.__connector__.connectors.crap.protocol - DEBUG - verify
+2019-12-07 16:51:31,200 - playground.__connector__.connectors.crap.protocol - DEBUG - verify success !
+2019-12-07 16:51:31,200 - playground.__connector__.connectors.crap.protocol - DEBUG - b'\xc3\t4\x1d\x04\xdf\xc8\xbd\xdb\xe3\x90\xad'
+2019-12-07 16:51:31,201 - playground.__connector__.connectors.crap.protocol - DEBUG - b'(R\xaa\xbdGD<\xb7\xfe\xba\x81\xc6'
+2019-12-07 16:51:31,202 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send Second Packet END <<<<<
+2019-12-07 16:51:31,250 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40118
+2019-12-07 16:51:31,250 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 165
+2019-12-07 16:51:31,251 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 16:51:31,252 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 16:51:31,254 - playground.__connector__.connectors.crap.protocol - DEBUG - CLIENT: CRAP OUT
+2019-12-07 16:51:31,281 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40118
+2019-12-07 16:51:31,281 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 937
+2019-12-07 16:51:31,281 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 16:51:31,282 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 16:51:31,283 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 16:51:31,286 - playground.__connector__.connectors.crap.protocol - DEBUG - CLIENT: CRAP OUT
+2019-12-07 16:51:31,286 - playground.__connector__.connectors.poop.protocol - DEBUG - Higher protocol called init_close(). Killing higher protocol.
+2019-12-07 16:51:31,286 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 16:51:31,287 - playground.__connector__.connectors.poop.protocol - DEBUG - The same error again
+2019-12-07 16:51:31,302 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40118
+2019-12-07 16:51:31,302 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 16:51:31,302 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 16:51:32,290 - playground.__connector__.connectors.poop.protocol - DEBUG - sending shutdown pkt.
+2019-12-07 16:51:32,390 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40118
+2019-12-07 16:51:32,391 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 16:51:32,392 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 16:51:32,393 - playground.__connector__.connectors.poop.protocol - DEBUG - Shutdown due to: FIN has been acked.
+2019-12-07 16:51:32,393 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 16:51:32,394 - playground.network.protocols.vsockets - DEBUG - Could not push data to application because 'NoneType' object has no attribute 'seq'.
+2019-12-07 16:51:32,395 - playground.network.protocols.vsockets - DEBUG - low level connection_lost for callback port 40118, reason=None
+2019-12-07 16:51:32,395 - playground.__connector__.connectors.poop.protocol - DEBUG - server passthrough connection lost. Shutting down higher layer.
+2019-12-07 16:51:32,395 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 16:51:32,395 - playground.network.protocols.vsockets - DEBUG - Connection Lost towards higher protocol for connection initiated through spawned port 40118
+2019-12-07 16:51:32,396 - playground.network.devices.vnic.connect - DEBUG - Connection closed for spawned port 40118
+2019-12-07 16:56:32,397 - playground.__connector__.connectors.poop.protocol - DEBUG - Shutdown due to: connection timeout
+2019-12-07 16:56:32,398 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 17:11:50,174 - playground.network.devices.vnic.connect - DEBUG - Callback service new data connection on tcp port 40128
+2019-12-07 17:11:50,179 - playground.network.protocols.vsockets - INFO - Connect 1 callback 20194.4.4.4:8666 -> 20194.1.1.200:2114
+2019-12-07 17:11:50,179 - playground.network.devices.vnic.connect - DEBUG - Callback service setting up callback for connectionID 1, spawn port 40128
+2019-12-07 17:11:50,179 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Init Protocol Start: server <<<<<
+2019-12-07 17:11:50,179 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Init Protocol End: server <<<<<
+2019-12-07 17:11:50,179 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP: init protocol
+2019-12-07 17:11:50,180 - playground.network.devices.vnic.connect - DEBUG - Connection made on spawned port 40128 for stack [<connectors.poop.protocol.POOP object at 0x7f3924d8dfd0>,<connectors.crap.protocol.CRAP object at 0x7f3924d8d160>,<__main__.EchoServerClientProtocol object at 0x7f392741d550>] 20194.4.4.4:8666 -> 20194.1.1.200:2114
+2019-12-07 17:11:50,180 - playground.network.protocols.vsockets - DEBUG - Creating tranport for higher protocol <connectors.poop.protocol.POOP object at 0x7f3924d8dfd0> with spawnport 40128
+2019-12-07 17:11:50,180 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP: connection made
+2019-12-07 17:11:50,181 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 58
+2019-12-07 17:11:50,182 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.handshakepacket
+2019-12-07 17:11:50,356 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40128
+2019-12-07 17:11:50,357 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 3164
+2019-12-07 17:11:50,357 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.handshakepacket
+2019-12-07 17:11:50,359 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.handshakepacket
+2019-12-07 17:11:50,360 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Connection Made Start: server <<<<<
+2019-12-07 17:11:50,360 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Connection Made End: server <<<<<
+2019-12-07 17:11:50,360 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP: handshake success!
+2019-12-07 17:11:50,360 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:11:50,362 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 17:11:50,362 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send First Packet START <<<<<
+2019-12-07 17:11:50,363 - playground.__connector__.connectors.crap.protocol - DEBUG - -----BEGIN PUBLIC KEY-----
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEjorTUT8n4Kfg72UQWibkodA/8mZMcgrs
+VtO6avBx7zEOcUkJ4yEKx6QtC2bTR6CCUQJ8NDLZvcMhRhtmIV7u+zq2tVmAiUXJ
+IK7zoS2eDpZNs4/j0SgFtPLT+NER0Wdo
+-----END PUBLIC KEY-----
+
+2019-12-07 17:11:50,364 - playground.__connector__.connectors.crap.protocol - DEBUG - verify success !
+2019-12-07 17:11:50,447 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send First Packet END <<<<<
+2019-12-07 17:11:50,465 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40128
+2019-12-07 17:11:50,465 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 17:11:50,466 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:11:50,488 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40128
+2019-12-07 17:11:50,488 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 1627
+2019-12-07 17:11:50,488 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:11:50,490 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 17:11:50,490 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send Second Packet START <<<<<
+2019-12-07 17:11:50,490 - playground.__connector__.connectors.crap.protocol - DEBUG - verify
+2019-12-07 17:11:50,491 - playground.__connector__.connectors.crap.protocol - DEBUG - verify success !
+2019-12-07 17:11:50,491 - playground.__connector__.connectors.crap.protocol - DEBUG - b'\x0e\xd4\xdc\xc1X{\xcc\xc3\x88\x9dee'
+2019-12-07 17:11:50,491 - playground.__connector__.connectors.crap.protocol - DEBUG - b'\x1b\x1cp\x92]0\x9dI7\x11\xf7\x85'
+2019-12-07 17:11:50,492 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send Second Packet END <<<<<
+2019-12-07 17:11:50,512 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40128
+2019-12-07 17:11:50,512 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 169
+2019-12-07 17:11:50,513 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:11:50,514 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 17:11:50,516 - playground.__connector__.connectors.crap.protocol - DEBUG - CLIENT: CRAP OUT
+2019-12-07 17:11:50,540 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40128
+2019-12-07 17:11:50,540 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 17:11:50,541 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:11:51,245 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40128
+2019-12-07 17:11:51,245 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 897
+2019-12-07 17:11:51,246 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:11:51,247 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 17:11:51,251 - playground.__connector__.connectors.crap.protocol - DEBUG - CLIENT: CRAP OUT
+2019-12-07 17:11:51,251 - playground.__connector__.connectors.poop.protocol - DEBUG - Higher protocol called init_close(). Killing higher protocol.
+2019-12-07 17:11:51,251 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 17:11:51,252 - playground.__connector__.connectors.poop.protocol - DEBUG - The same error again
+2019-12-07 17:11:51,277 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40128
+2019-12-07 17:11:51,277 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 17:11:51,277 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:11:52,255 - playground.__connector__.connectors.poop.protocol - DEBUG - sending shutdown pkt.
+2019-12-07 17:11:52,320 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40128
+2019-12-07 17:11:52,321 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 17:11:52,322 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:11:52,323 - playground.__connector__.connectors.poop.protocol - DEBUG - Shutdown due to: FIN has been acked.
+2019-12-07 17:11:52,323 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 17:11:52,324 - playground.network.protocols.vsockets - DEBUG - Could not push data to application because 'NoneType' object has no attribute 'seq'.
+2019-12-07 17:11:52,324 - playground.network.protocols.vsockets - DEBUG - low level connection_lost for callback port 40128, reason=None
+2019-12-07 17:11:52,324 - playground.__connector__.connectors.poop.protocol - DEBUG - server passthrough connection lost. Shutting down higher layer.
+2019-12-07 17:11:52,325 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 17:11:52,325 - playground.network.protocols.vsockets - DEBUG - Connection Lost towards higher protocol for connection initiated through spawned port 40128
+2019-12-07 17:11:52,326 - playground.network.devices.vnic.connect - DEBUG - Connection closed for spawned port 40128
+2019-12-07 17:12:34,316 - playground.network.devices.vnic.connect - DEBUG - Callback service new data connection on tcp port 40130
+2019-12-07 17:12:34,323 - playground.network.protocols.vsockets - INFO - Connect 1 callback 20194.4.4.4:8666 -> 20194.1.1.200:2116
+2019-12-07 17:12:34,324 - playground.network.devices.vnic.connect - DEBUG - Callback service setting up callback for connectionID 1, spawn port 40130
+2019-12-07 17:12:34,324 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Init Protocol Start: server <<<<<
+2019-12-07 17:12:34,324 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Init Protocol End: server <<<<<
+2019-12-07 17:12:34,325 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP: init protocol
+2019-12-07 17:12:34,325 - playground.network.devices.vnic.connect - DEBUG - Connection made on spawned port 40130 for stack [<connectors.poop.protocol.POOP object at 0x7f3924d42780>,<connectors.crap.protocol.CRAP object at 0x7f3924d42f60>,<__main__.EchoServerClientProtocol object at 0x7f3924da8898>] 20194.4.4.4:8666 -> 20194.1.1.200:2116
+2019-12-07 17:12:34,326 - playground.network.protocols.vsockets - DEBUG - Creating tranport for higher protocol <connectors.poop.protocol.POOP object at 0x7f3924d42780> with spawnport 40130
+2019-12-07 17:12:34,326 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP: connection made
+2019-12-07 17:12:34,327 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 58
+2019-12-07 17:12:34,329 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.handshakepacket
+2019-12-07 17:12:34,531 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40130
+2019-12-07 17:12:34,531 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 64
+2019-12-07 17:12:34,532 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.handshakepacket
+2019-12-07 17:12:34,537 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Connection Made Start: server <<<<<
+2019-12-07 17:12:34,537 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Connection Made End: server <<<<<
+2019-12-07 17:12:34,537 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP: handshake success!
+2019-12-07 17:12:34,538 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40130
+2019-12-07 17:12:34,539 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 3042
+2019-12-07 17:12:34,540 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:12:34,543 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 17:12:34,545 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send First Packet START <<<<<
+2019-12-07 17:12:34,546 - playground.__connector__.connectors.crap.protocol - DEBUG - -----BEGIN PUBLIC KEY-----
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAE6tIXogXXp9ChSU2Q3J6P4gGSVraMlcbd
+8nxeIXadrXHLH07zdN5pM1PdEksSPM8ivJ3xp73Fh9jSda2e+wfK7Y8Io5/GCwDI
+wlIFGWnBLNoWcD9f02WPwiLVtjGYY3Rk
+-----END PUBLIC KEY-----
+
+2019-12-07 17:12:34,548 - playground.__connector__.connectors.crap.protocol - DEBUG - verify success !
+2019-12-07 17:12:34,940 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send First Packet END <<<<<
+2019-12-07 17:12:35,234 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40130
+2019-12-07 17:12:35,234 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 17:12:35,235 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:12:35,243 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40130
+2019-12-07 17:12:35,243 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 1627
+2019-12-07 17:12:35,244 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:12:35,245 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 17:12:35,246 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send Second Packet START <<<<<
+2019-12-07 17:12:35,246 - playground.__connector__.connectors.crap.protocol - DEBUG - verify
+2019-12-07 17:12:35,246 - playground.__connector__.connectors.crap.protocol - DEBUG - verify success !
+2019-12-07 17:12:35,246 - playground.__connector__.connectors.crap.protocol - DEBUG - b"\x0b\xc1;\xf5?\xda\xe9\x08J\xe9'*"
+2019-12-07 17:12:35,247 - playground.__connector__.connectors.crap.protocol - DEBUG - b'\xfd\xa8G\xe9\x8e}\xccQ\xd92\xe7@'
+2019-12-07 17:12:35,247 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send Second Packet END <<<<<
+2019-12-07 17:12:35,272 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40130
+2019-12-07 17:12:35,272 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 169
+2019-12-07 17:12:35,273 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:12:35,274 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 17:12:35,276 - playground.__connector__.connectors.crap.protocol - DEBUG - CLIENT: CRAP OUT
+2019-12-07 17:12:35,303 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40130
+2019-12-07 17:12:35,304 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 17:12:35,304 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:12:35,907 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40130
+2019-12-07 17:12:35,907 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 897
+2019-12-07 17:12:35,907 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:12:35,908 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 17:12:35,910 - playground.__connector__.connectors.crap.protocol - DEBUG - CLIENT: CRAP OUT
+2019-12-07 17:12:35,911 - playground.__connector__.connectors.poop.protocol - DEBUG - Higher protocol called init_close(). Killing higher protocol.
+2019-12-07 17:12:35,911 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 17:12:35,911 - playground.__connector__.connectors.poop.protocol - DEBUG - The same error again
+2019-12-07 17:12:35,969 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40130
+2019-12-07 17:12:35,969 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 17:12:35,969 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:12:36,914 - playground.__connector__.connectors.poop.protocol - DEBUG - sending shutdown pkt.
+2019-12-07 17:12:37,334 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40130
+2019-12-07 17:12:37,334 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 17:12:37,336 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:12:37,336 - playground.__connector__.connectors.poop.protocol - DEBUG - Shutdown due to: FIN has been acked.
+2019-12-07 17:12:37,337 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 17:12:37,338 - playground.network.protocols.vsockets - DEBUG - Could not push data to application because 'NoneType' object has no attribute 'seq'.
+2019-12-07 17:12:37,338 - playground.network.protocols.vsockets - DEBUG - low level connection_lost for callback port 40130, reason=None
+2019-12-07 17:12:37,339 - playground.__connector__.connectors.poop.protocol - DEBUG - server passthrough connection lost. Shutting down higher layer.
+2019-12-07 17:12:37,339 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 17:12:37,339 - playground.network.protocols.vsockets - DEBUG - Connection Lost towards higher protocol for connection initiated through spawned port 40130
+2019-12-07 17:12:37,340 - playground.network.devices.vnic.connect - DEBUG - Connection closed for spawned port 40130
+2019-12-07 17:16:52,327 - playground.__connector__.connectors.poop.protocol - DEBUG - Shutdown due to: connection timeout
+2019-12-07 17:16:52,327 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 17:17:37,344 - playground.__connector__.connectors.poop.protocol - DEBUG - Shutdown due to: connection timeout
+2019-12-07 17:17:37,345 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 17:49:05,520 - playground.network.devices.vnic.connect - DEBUG - Callback service new data connection on tcp port 40188
+2019-12-07 17:49:05,524 - playground.network.protocols.vsockets - INFO - Connect 1 callback 20194.4.4.4:8666 -> 20194.6.20.30:2061
+2019-12-07 17:49:05,524 - playground.network.devices.vnic.connect - DEBUG - Callback service setting up callback for connectionID 1, spawn port 40188
+2019-12-07 17:49:05,524 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Init Protocol Start: server <<<<<
+2019-12-07 17:49:05,524 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Init Protocol End: server <<<<<
+2019-12-07 17:49:05,524 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP: init protocol
+2019-12-07 17:49:05,525 - playground.network.devices.vnic.connect - DEBUG - Connection made on spawned port 40188 for stack [<connectors.poop.protocol.POOP object at 0x7f3924de92b0>,<connectors.crap.protocol.CRAP object at 0x7f3924de9cc0>,<__main__.EchoServerClientProtocol object at 0x7f392554ce48>] 20194.4.4.4:8666 -> 20194.6.20.30:2061
+2019-12-07 17:49:05,525 - playground.network.protocols.vsockets - DEBUG - Creating tranport for higher protocol <connectors.poop.protocol.POOP object at 0x7f3924de92b0> with spawnport 40188
+2019-12-07 17:49:05,525 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP: connection made
+2019-12-07 17:49:05,525 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 58
+2019-12-07 17:49:05,526 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.handshakepacket
+2019-12-07 17:49:05,555 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40188
+2019-12-07 17:49:05,555 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 3020
+2019-12-07 17:49:05,555 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.handshakepacket
+2019-12-07 17:49:05,556 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Connection Made Start: server <<<<<
+2019-12-07 17:49:05,556 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Crap Connection Made End: server <<<<<
+2019-12-07 17:49:05,556 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP: handshake success!
+2019-12-07 17:49:05,557 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:49:05,558 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 17:49:05,559 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send First Packet START <<<<<
+2019-12-07 17:49:05,559 - playground.__connector__.connectors.crap.protocol - DEBUG - -----BEGIN PUBLIC KEY-----
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAE0f1d5Tg+IRBygMU7jVuFOxHbz8d2AGFr
+ocXrJEaGP2PEs6alX7HAAfVmHXxnH6L+MjzEiFuSCVBtCG78VrJFFvKU+9HVA202
+sZ5WhGnE10sSfRpUOcjOVapwCd8p7wmv
+-----END PUBLIC KEY-----
+
+2019-12-07 17:49:05,560 - playground.__connector__.connectors.crap.protocol - DEBUG - verify success !
+2019-12-07 17:49:05,671 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send First Packet END <<<<<
+2019-12-07 17:49:05,694 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40188
+2019-12-07 17:49:05,694 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 422
+2019-12-07 17:49:05,695 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:49:05,695 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:49:05,696 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 17:49:05,697 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send Second Packet START <<<<<
+2019-12-07 17:49:05,697 - playground.__connector__.connectors.crap.protocol - DEBUG - verify
+2019-12-07 17:49:05,697 - playground.__connector__.connectors.crap.protocol - DEBUG - verify success !
+2019-12-07 17:49:05,698 - playground.__connector__.connectors.crap.protocol - DEBUG - b'\xec\xa7\x93\xa1\xbd2\xacO\x16\xcc\x80X'
+2019-12-07 17:49:05,698 - playground.__connector__.connectors.crap.protocol - DEBUG - b'\x8er\xff\xdf\xad\x80\x9fk_K\xbd\x95'
+2019-12-07 17:49:05,698 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Server: Send Second Packet END <<<<<
+2019-12-07 17:49:06,742 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40188
+2019-12-07 17:49:06,743 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 175
+2019-12-07 17:49:06,743 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:49:06,743 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 17:49:06,746 - playground.__connector__.connectors.crap.protocol - DEBUG - CLIENT: CRAP OUT
+2019-12-07 17:49:06,861 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40188
+2019-12-07 17:49:06,861 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 17:49:06,861 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:49:09,974 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40188
+2019-12-07 17:49:09,974 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 897
+2019-12-07 17:49:09,974 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:49:09,975 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> data recv data <<<<<<< 
+2019-12-07 17:49:09,976 - playground.__connector__.connectors.crap.protocol - DEBUG - CLIENT: CRAP OUT
+2019-12-07 17:49:09,976 - playground.__connector__.connectors.poop.protocol - DEBUG - Higher protocol called init_close(). Killing higher protocol.
+2019-12-07 17:49:09,980 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 17:49:09,981 - playground.__connector__.connectors.poop.protocol - DEBUG - The same error again
+2019-12-07 17:49:09,994 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40188
+2019-12-07 17:49:09,994 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 17:49:09,994 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:49:10,983 - playground.__connector__.connectors.poop.protocol - DEBUG - sending shutdown pkt.
+2019-12-07 17:49:11,761 - playground.network.protocols.vsockets - DEBUG - Pushing data to application, data received on 40188
+2019-12-07 17:49:11,761 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP recv a buffer of size 50
+2019-12-07 17:49:11,761 - playground.__connector__.connectors.poop.protocol - DEBUG - server POOP the pkt name is: poop.datapacket
+2019-12-07 17:49:11,762 - playground.__connector__.connectors.poop.protocol - DEBUG - Shutdown due to: FIN has been acked.
+2019-12-07 17:49:11,762 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 17:49:11,762 - playground.network.protocols.vsockets - DEBUG - Could not push data to application because 'NoneType' object has no attribute 'seq'.
+2019-12-07 17:49:11,762 - playground.network.protocols.vsockets - DEBUG - low level connection_lost for callback port 40188, reason=None
+2019-12-07 17:49:11,763 - playground.__connector__.connectors.poop.protocol - DEBUG - server passthrough connection lost. Shutting down higher layer.
+2019-12-07 17:49:11,763 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
+2019-12-07 17:49:11,763 - playground.network.protocols.vsockets - DEBUG - Connection Lost towards higher protocol for connection initiated through spawned port 40188
+2019-12-07 17:49:11,763 - playground.network.devices.vnic.connect - DEBUG - Connection closed for spawned port 40188
+2019-12-07 17:54:11,767 - playground.__connector__.connectors.poop.protocol - DEBUG - Shutdown due to: connection timeout
+2019-12-07 17:54:11,767 - playground.__connector__.connectors.crap.protocol - DEBUG - >>>>> Connection Lost <<<<<
