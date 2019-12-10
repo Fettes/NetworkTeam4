@@ -14,3 +14,9 @@ ModuleNotFoundError: No module named 'playground'
 2019-12-07 22:01:22,254 - playground.network.protocols.vsockets - DEBUG - Closing connection 1
 2019-12-07 22:01:22,256 - playground.network.devices.vnic.connect - DEBUG - Closing 0 connections for server with id 1
 Serving on (20194.4.4.4, 8888)
+Traceback (most recent call last):
+  File "server.py", line 9, in <module>
+    from Game_Bank.packet import *
+  File "/home/student_20194/Tianshi_Feng/NetworkTeam4/Game_Bank/packet.py", line 1, in <module>
+    from playground.network.packet import PacketType
+ModuleNotFoundError: No module named 'playground'
