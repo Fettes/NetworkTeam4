@@ -91,7 +91,10 @@ class CRAP(StackingProtocol):
         self.higher_transport.connect_protocol(self)
         global connector
         connector = transport.get_extra_info('peername')
-        
+
+        # 0 for success
+        self.rule = 0
+
 
         if self.mode == "client":
             logger.debug(">>>>> Client: Send First Packet START <<<<<")
@@ -101,37 +104,156 @@ class CRAP(StackingProtocol):
             # create a signing key
             self.signkA = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
 
-            # FIXME note: cert_t4.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
-
-            # create a certification with current playground address
             cert_root_data = open('/home/student_20194/.playground/connectors/crap/20194_root.cert', 'rb').read()
             cert_t4_data = open('/home/student_20194/.playground/connectors/crap/csr_team4_signed.cert', 'rb').read()
             privk_t4_data = open('/home/student_20194/.playground/connectors/crap/key_team4.pem', 'rb').read()
             self.cert_root = cryptography.x509.load_pem_x509_certificate(cert_root_data, default_backend())
             self.cert_t4 = cryptography.x509.load_pem_x509_certificate(cert_t4_data, default_backend())
             self.privk_t4 = serialization.load_pem_private_key(privk_t4_data,password=b'passphrase',backend=default_backend())
-            subject = x509.Name([x509.NameAttribute(NameOID.COUNTRY_NAME, u"US"),
-                x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"Maryland"),
-                x509.NameAttribute(NameOID.LOCALITY_NAME, u"Baltimore"),
-                x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Team 4"),
-                x509.NameAttribute(NameOID.COMMON_NAME, u"20194.4.4.4"),
-            ])
-            self.certA = x509.CertificateBuilder().subject_name(
-                subject
-            ).issuer_name(
-                self.cert_t4.subject
-            ).public_key(
-                self.signkA.public_key()
-            ).serial_number(
-                x509.random_serial_number()
-            ).not_valid_before(
-                datetime.datetime.utcnow()
-            ).not_valid_after(
-                datetime.datetime.utcnow() + datetime.timedelta(days=10)
-            ).add_extension(
-                x509.SubjectAlternativeName([x509.DNSName(u"20194.4.4.4")]),
-                critical=False,
-            ).sign(self.privk_t4, hashes.SHA256(), default_backend())
+
+            # create a certification 
+
+            # good cert
+            if self.rule == 0:
+
+                subject = x509.Name([
+                    x509.NameAttribute(NameOID.COMMON_NAME, u"20194.4.4.4"),
+                ])
+                self.certA = x509.CertificateBuilder().subject_name(
+                    subject
+                ).issuer_name(
+                    self.cert_t4.subject
+                ).public_key(
+                    self.signkA.public_key()
+                ).serial_number(
+                    x509.random_serial_number()
+                ).not_valid_before(
+                    datetime.datetime.utcnow()
+                ).not_valid_after(
+                    datetime.datetime.utcnow() + datetime.timedelta(days=10)
+                ).add_extension(
+                    x509.SubjectAlternativeName([x509.DNSName(u"20194.4.4.4")]),
+                    critical=False,
+                ).sign(self.privk_t4, hashes.SHA256(), default_backend())
+
+            # bad cert: unmatched common name (make sure current address is not 20194.4.4.5)
+            # aaa 
+            # aaa
+            elif self.rule == 1:
+
+                subject = x509.Name([
+                    x509.NameAttribute(NameOID.COMMON_NAME, u"20194.4.4.5"),
+                ])
+                self.certA = x509.CertificateBuilder().subject_name(
+                    subject
+                ).issuer_name(
+                    self.cert_t4.subject
+                ).public_key(
+                    self.signkA.public_key()
+                ).serial_number(
+                    x509.random_serial_number()
+                ).not_valid_before(
+                    datetime.datetime.utcnow()
+                ).not_valid_after(
+                    datetime.datetime.utcnow() + datetime.timedelta(days=10)
+                ).add_extension(
+                    x509.SubjectAlternativeName([x509.DNSName(u"20194.4.4.5")]),
+                    critical=False,
+                ).sign(self.privk_t4, hashes.SHA256(), default_backend())
+            
+            # bad cert: unmatched prefix (make sure the current address 20194.5.5.5)
+            elif self.rule == 2:
+
+                subject = x509.Name([
+                    x509.NameAttribute(NameOID.COMMON_NAME, u"20194.5.5.5"),
+                ])
+                self.certA = x509.CertificateBuilder().subject_name(
+                    subject
+                ).issuer_name(
+                    self.cert_t4.subject
+                ).public_key(
+                    self.signkA.public_key()
+                ).serial_number(
+                    x509.random_serial_number()
+                ).not_valid_before(
+                    datetime.datetime.utcnow()
+                ).not_valid_after(
+                    datetime.datetime.utcnow() + datetime.timedelta(days=10)
+                ).add_extension(
+                    x509.SubjectAlternativeName([x509.DNSName(u"20194.5.5.5")]),
+                    critical=False,
+                ).sign(self.privk_t4, hashes.SHA256(), default_backend())
+
+            # bad cert: cert with unmatched sign key
+            elif self.rule == 3:
+
+                wrong_signk = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
+                subject = x509.Name([
+                    x509.NameAttribute(NameOID.COMMON_NAME, u"20194.5.5.5"),
+                ])
+                self.certA = x509.CertificateBuilder().subject_name(
+                    subject
+                ).issuer_name(
+                    self.cert_t4.subject
+                ).public_key(
+                    self.signkA.public_key()
+                ).serial_number(
+                    x509.random_serial_number()
+                ).not_valid_before(
+                    datetime.datetime.utcnow()
+                ).not_valid_after(
+                    datetime.datetime.utcnow() + datetime.timedelta(days=10)
+                ).add_extension(
+                    x509.SubjectAlternativeName([x509.DNSName(u"20194.5.5.5")]),
+                    critical=False,
+                ).sign(wrong_signk, hashes.SHA256(), default_backend())
+
+            # bad cert: cert signed by a self signed team cert
+            elif self.rule == 4:
+
+                bad_team_privk = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
+                subject = issuer = x509.Name([
+                    x509.NameAttribute(NameOID.COMMON_NAME, u"20194.4."),
+                ])
+                bad_team_cert = x509.CertificateBuilder().subject_name(
+                    subject
+                ).issuer_name(
+                    issuer
+                ).public_key(
+                    bad_team_privk.public_key()
+                ).serial_number(
+                    x509.random_serial_number()
+                ).not_valid_before(
+                    datetime.datetime.utcnow()
+                ).not_valid_after(
+                    datetime.datetime.utcnow() + datetime.timedelta(days=10)
+                ).add_extension(
+                    x509.SubjectAlternativeName([x509.DNSName(u"20194.4.")]),
+                    critical=False,
+                ).sign(bad_team_privk, hashes.SHA256(), default_backend())
+                bad_team_cert_bytes = bad_team_cert.public_bytes(Encoding.PEM)
+
+                subject = x509.Name([
+                    x509.NameAttribute(NameOID.COMMON_NAME, u"20194.4.4.4"),
+                ])
+                self.certA = x509.CertificateBuilder().subject_name(
+                    subject
+                ).issuer_name(
+                    bad_team_cert.subject
+                ).public_key(
+                    self.signkA.public_key()
+                ).serial_number(
+                    x509.random_serial_number()
+                ).not_valid_before(
+                    datetime.datetime.utcnow()
+                ).not_valid_after(
+                    datetime.datetime.utcnow() + datetime.timedelta(days=10)
+                ).add_extension(
+                    x509.SubjectAlternativeName([x509.DNSName(u"20194.4.4.4")]),
+                    critical=False,
+                ).sign(bad_team_privk, hashes.SHA256(), default_backend())
+
+
             certA_bytes = self.certA.public_bytes(Encoding.PEM)
 
             # create a signature for the public key
@@ -146,7 +268,10 @@ class CRAP(StackingProtocol):
             self.nonceA = random.randint(0, 999999)
 
             # create a cert chain
-            self.certChain = [cert_t4_data]
+            if self.rule == 4:
+                self.certChain = [bad_team_cert_bytes]
+            else:
+                self.certChain = [cert_t4_data]
             # create a new packet
             new_packet = HandshakePacket(status=0,nonce=self.nonceA,pk=pubkA_bytes,signature=self.sigA,cert=certA_bytes,certChain=self.certChain)
             # transport the new packet
@@ -165,7 +290,6 @@ class CRAP(StackingProtocol):
                 self.handshake_handler(packet)
             elif isinstance(packet, DataPacket) and not self.handshake:
                 self.data_handler(packet)
-            
             elif isinstance(packet, ErrorPacket):
                 logger.debug(">>> ERROR PACKET:  ")
                 logger.debug(packet.message)
@@ -364,7 +488,7 @@ class CRAP(StackingProtocol):
                 self.handshake = False
                 self.higherProtocol().connection_made(self.higher_transport)
                 try:
-            
+
                     team = connector[0].split(".")[1]
                     connection_made_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                     print('------connect made-------')
@@ -401,7 +525,7 @@ class CRAP(StackingProtocol):
                 #Mteam = connector.split(".")[1]
                 #Mconnection_made_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 #print("time:{}, team{}, connector:{}, connection made success!!!".format(connection_made_time, team, connector)
-            
+
 
             #else:
                 #error_packet = HandshakePacket(status=2)
@@ -441,7 +565,7 @@ class CRAP(StackingProtocol):
                             hashes.SHA256())
 
                         cert_addr = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
-                        
+
                         for i in range(2):
                             if cur_addr[i] != cert_addr[i]:
                                 raise Exception("unmatched perfix")
@@ -496,7 +620,7 @@ class CRAP(StackingProtocol):
 
                 logger.debug(self.ivA)
                 logger.debug(self.ivB)
-        
+
 
                 self.handshake = False
                 self.higherProtocol().connection_made(self.higher_transport)
