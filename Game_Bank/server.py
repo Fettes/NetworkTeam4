@@ -743,6 +743,7 @@ class EchoServerClientProtocol(asyncio.Protocol):
     def data_received(self, data):
         self.deserializer.update(data)
         for serverPacket in self.deserializer.nextPackets():
+            print(serverPacket)
             if isinstance(serverPacket, GameInitPacket):
                 username = process_game_init(serverPacket)
                 print(username)

@@ -815,7 +815,7 @@ async def gameswitch(switch):
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     # Each client connection will create a new protocol instance
-    coro = playground.create_server(EchoServerClientProtocol, "localhost", port=8666, family="crap")
+    coro = playground.create_server(EchoServerClientProtocol, "localhost", port=8667, family="crap")
     server = loop.run_until_complete(coro)
 
     loop.set_debug(enabled=True)
