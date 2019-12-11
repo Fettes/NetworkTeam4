@@ -616,5 +616,4 @@ team9   time:2019-12-11 08:32:39   Connection made success!!!
 team9   time:2019-12-11 08:35:09   Connection made success!!!
 team9   time:2019-12-11 08:40:11   Connection made success!!!
 team9   time:2019-12-11 08:42:43   Connection made success!!!
-team4 	time:2019-12-12 00:00:01   Connection made success!!!
 team9   time:2019-12-11 08:47:44   Connection made success!!!
