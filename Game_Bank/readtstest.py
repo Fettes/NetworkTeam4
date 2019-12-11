@@ -25,6 +25,7 @@ with open ("tstest.txt", "r") as f:
             log = [[0]*3 for i in range(10)]
             date = d
             a.close
+            print(date)
 
         if r == 'made':
             log[t][0] += 1
@@ -42,4 +43,4 @@ with open ("tstest.txt", "r") as f:
 
         line = f.readline()
 
-
+f.close
